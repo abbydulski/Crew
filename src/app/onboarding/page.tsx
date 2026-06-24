@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { resolvePersonName } from '@/components/PersonPicker';
-import Spinner from '@/components/Spinner';
+import PageLoading from '@/components/PageLoading';
 import { THREE_WEEK_TASKS, tasksApplyToTeam, type OnboardingTaskDef } from '@/lib/onboarding-tasks';
 
 interface OnboardingTaskRecord {
@@ -212,9 +212,7 @@ export default function OnboardingPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Spinner />
-        </div>
+        <PageLoading />
       ) : candidates.length === 0 ? (
         <p className="py-20 text-center text-[11px] uppercase tracking-wider text-[var(--border-light)]">No hired candidates yet</p>
       ) : (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import Spinner from '@/components/Spinner';
+import PageLoading from '@/components/PageLoading';
 
 interface Referral {
   id: string;
@@ -69,11 +69,7 @@ export default function ReferralsPage() {
     }
   };
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center py-20">
-      <Spinner />
-    </div>
-  );
+  if (isLoading) return <PageLoading />;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">

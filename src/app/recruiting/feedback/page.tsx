@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import Spinner from '@/components/Spinner';
+import PageLoading from '@/components/PageLoading';
 
 interface Candidate {
   id: string;
@@ -115,11 +115,7 @@ export default function InterviewFeedbackPage() {
     }
   };
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center py-20">
-      <Spinner size={32} />
-    </div>
-  );
+  if (isLoading) return <PageLoading />;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">

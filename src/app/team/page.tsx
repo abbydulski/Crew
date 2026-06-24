@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Spinner from '@/components/Spinner';
+import PageLoading from '@/components/PageLoading';
 
 const ALL_TICKET_TYPES = [
   { value: 'DEEL_EMAIL', label: 'Deel + Email' },
@@ -87,9 +87,7 @@ export default function TeamDirectoryPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Spinner />
-        </div>
+        <PageLoading />
       ) : filtered.length === 0 ? (
         <p className="py-20 text-center text-[11px] uppercase tracking-wider text-[var(--border-light)]">
           {members.length === 0 ? 'No team members yet — they\'ll appear here after logging in' : 'No members match your search'}

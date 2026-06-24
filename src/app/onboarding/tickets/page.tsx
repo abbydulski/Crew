@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Spinner from '@/components/Spinner';
+import PageLoading from '@/components/PageLoading';
 import TicketCard from './TicketCard';
 
 export type TicketType = 'DEEL_EMAIL' | 'OFFICE' | 'SAFETY' | 'TRUCK' | 'IT' | 'ONE_WEEK';
@@ -117,9 +117,7 @@ export default function OnboardingTicketsPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Spinner size={32} />
-        </div>
+        <PageLoading />
       ) : filtered.length === 0 ? (
         <p className="py-20 text-center text-sm text-[#999]">No tickets match the current filter.</p>
       ) : (

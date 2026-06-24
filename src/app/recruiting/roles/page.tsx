@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Spinner from '@/components/Spinner';
+import PageLoading from '@/components/PageLoading';
 import RoleModal from './RoleModal';
 
 export interface Role {
@@ -73,7 +73,7 @@ export default function OpenRolesPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20"><Spinner size={32} /></div>
+        <PageLoading />
       ) : roles.length === 0 ? (
         <p className="py-20 text-center font-mono text-xs text-[var(--border-light)]">No open roles yet — click + New Role to post one.</p>
       ) : (

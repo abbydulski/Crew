@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Candidate, Recruiter } from '@/features/recruiting/types';
-import Spinner from '@/components/Spinner';
+import PageLoading from '@/components/PageLoading';
 import Board from '@/features/recruiting/components/Board';
 import CandidateCard from '@/features/recruiting/components/CandidateCard';
 import CandidateModal from '@/features/recruiting/components/CandidateModal';
@@ -105,7 +105,7 @@ function RecruitingContent() {
         </div>
       )}
       {isLoading ? (
-        <div className="flex items-center justify-center py-20"><Spinner /></div>
+        <PageLoading />
       ) : (
         <>
           <Board candidates={pipelineCandidates} dragOverStatus={dragOverStatus} setDragOverStatus={setDragOverStatus} handleDrop={handleDrop}
