@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import UserMenu from "@/components/UserMenu";
+import ThemeToggle from "@/components/ThemeToggle";
 import MainContent from "@/components/MainContent";
 import AuthProvider from "@/components/AuthProvider";
 import FeedbackButton from "@/components/FeedbackButton";
@@ -12,6 +13,9 @@ export const metadata: Metadata = {
   description: "People and HR operations",
 };
 
+// Runs before paint to avoid FOUC: applies stored theme or falls back to OS preference.
+const themeInitScript = `(function(){try{var s=localStorage.getItem('theme');var t=s||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -19,6 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="antialiased font-sans">
         <AuthProvider>
         <div className="min-h-screen bg-[var(--background)]">
@@ -37,7 +44,10 @@ export default function RootLayout({
                   Crew
                 </h1>
               </Link>
-              <UserMenu />
+              <div className="flex items-center gap-5">
+                <ThemeToggle />
+                <UserMenu />
+              </div>
             </div>
           </header>
 
