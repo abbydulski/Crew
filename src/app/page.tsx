@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-type NavItem = { href: string; label: string; adminOnly?: boolean };
+type NavItem = { href: string; label: string; adminOnly?: boolean; external?: boolean };
 type Section = { title: string; adminOnly?: boolean; items: NavItem[] };
 
 const SECTIONS: Section[] = [
@@ -25,10 +25,11 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    title: 'Team',
+    title: 'Team Resources',
     items: [
       { href: '/team', label: 'Team Directory' },
       { href: '/referrals', label: 'Referrals' },
+      { href: 'https://drive.google.com/drive/u/0/folders/15aiYBQJBcy0i628YnL4e6PYwjzPspq5i', label: 'Team Drive', external: true },
     ],
   },
 ];
@@ -60,15 +61,18 @@ export default function HomePage() {
               {section.title}
             </h2>
             <nav className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {section.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="block border-2 border-[var(--border)] bg-[var(--card-background)] p-4 font-mono text-sm uppercase tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-colors"
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {section.items.map((item) => {
+                const className = "block border-2 border-[var(--border)] bg-[var(--card-background)] p-4 font-mono text-sm uppercase tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-colors";
+                return item.external ? (
+                  <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
+                    {item.label} ↗
+                  </a>
+                ) : (
+                  <Link key={item.href} href={item.href} className={className}>
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
           </section>
         ))}
