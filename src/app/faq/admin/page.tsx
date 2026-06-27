@@ -30,6 +30,10 @@ export default function FaqAdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [tab, setTab] = useState<FaqStatus>('PENDING');
   const [error, setError] = useState('');
+  const [showNew, setShowNew] = useState(false);
+  const [newQuestion, setNewQuestion] = useState('');
+  const [newAnswer, setNewAnswer] = useState('');
+  const [creating, setCreating] = useState(false);
 
   const fetchFaqs = useCallback(async () => {
     try {
@@ -67,16 +71,67 @@ export default function FaqAdminPage() {
     } catch { setError('Failed to delete'); }
   };
 
+  const handleCreate = async (status: FaqStatus) => {
+    if (!newQuestion.trim()) { setError('Question is required'); return; }
+    if (status === 'PUBLISHED' && !newAnswer.trim()) { setError('Answer required to publish'); return; }
+    setCreating(true);
+    setError('');
+    try {
+      const res = await fetch('/api/faq/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: newQuestion.trim(), answer: newAnswer.trim(), status }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNewQuestion(''); setNewAnswer(''); setShowNew(false);
+        setTab(status);
+        await fetchFaqs();
+      } else {
+        setError(data.error || 'Failed to create');
+      }
+    } catch { setError('Failed to create'); }
+    finally { setCreating(false); }
+  };
+
   if (isLoading) return <PageLoading />;
 
   const visible = faqs.filter((f) => f.status === tab);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 border-b border-[var(--border)] pb-4">
-        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--foreground)]">FAQ Admin</h2>
-        <p className="mt-1 text-[11px] text-[var(--text-secondary)]">Answer submissions, publish, archive</p>
+      <div className="mb-6 flex items-end justify-between gap-4 border-b border-[var(--border)] pb-4">
+        <div>
+          <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--foreground)]">FAQ Admin</h2>
+          <p className="mt-1 text-[11px] text-[var(--text-secondary)]">Answer submissions, publish, archive</p>
+        </div>
+        <button type="button" onClick={() => setShowNew((v) => !v)}
+          className="border border-[var(--border)] bg-[var(--foreground)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--background)] hover:opacity-80 transition-colors shrink-0">
+          {showNew ? 'Cancel' : '+ New FAQ'}
+        </button>
       </div>
+
+      {showNew && (
+        <div className="mb-6 border border-[var(--border)] bg-[var(--card-background)] p-5">
+          <label className="mb-1 block text-[10px] font-black uppercase tracking-[0.15em] text-[var(--text-secondary)]">Question</label>
+          <textarea value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} rows={2}
+            className="mb-3 w-full border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm resize-none" autoFocus />
+          <label className="mb-1 block text-[10px] font-black uppercase tracking-[0.15em] text-[var(--text-secondary)]">Answer</label>
+          <textarea value={newAnswer} onChange={(e) => setNewAnswer(e.target.value)} rows={4}
+            placeholder="Write the answer here…"
+            className="mb-3 w-full border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm resize-none" />
+          <div className="flex flex-wrap gap-2">
+            <button type="button" disabled={creating || !newQuestion.trim() || !newAnswer.trim()} onClick={() => handleCreate('PUBLISHED')}
+              className="border border-[var(--border)] bg-[var(--foreground)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--background)] hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+              {creating ? 'Saving…' : 'Publish'}
+            </button>
+            <button type="button" disabled={creating || !newQuestion.trim()} onClick={() => handleCreate('PENDING')}
+              className="border border-[var(--border)] bg-[var(--card-background)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+              Save as draft
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="mb-5 flex gap-0 border-b border-[var(--border-light)]">
         {TABS.map((t) => {
