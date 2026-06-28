@@ -8,20 +8,21 @@ type Section = { title: string; adminOnly?: boolean; items: NavItem[] };
 
 const SECTIONS: Section[] = [
   {
-    title: 'Recruiting',
+    title: 'People Admin',
+    adminOnly: true,
     items: [
-      { href: '/recruiting', label: 'Recruiting Pipeline', adminOnly: true },
-      { href: '/recruiting/candidates', label: 'Candidates' },
-      { href: '/recruiting/roles', label: 'Roles' },
-      { href: '/recruiting/feedback', label: 'Interview Feedback' },
+      { href: '/recruiting', label: 'Recruiting Pipeline' },
+      { href: '/onboarding', label: 'Onboarding' },
+      { href: '/onboarding/tickets', label: 'Onboarding Tickets' },
+      { href: '/faq/admin', label: 'FAQ Admin' },
     ],
   },
   {
-    title: 'Onboarding',
-    adminOnly: true,
+    title: 'Recruiting',
     items: [
-      { href: '/onboarding', label: 'Onboarding' },
-      { href: '/onboarding/tickets', label: 'Onboarding Tickets' },
+      { href: '/recruiting/candidates', label: 'Candidates' },
+      { href: '/recruiting/roles', label: 'Roles' },
+      { href: '/recruiting/feedback', label: 'Interview Feedback' },
     ],
   },
   {
@@ -30,7 +31,6 @@ const SECTIONS: Section[] = [
       { href: '/team', label: 'Team Directory' },
       { href: '/referrals', label: 'Referrals' },
       { href: '/faq', label: 'FAQ' },
-      { href: '/faq/admin', label: 'FAQ Admin', adminOnly: true },
       { href: 'https://drive.google.com/file/d/1u0ErNRY_ogHk69LQUWs_r525gkOX1bkp/view?usp=sharing', label: '2026 Benefits Guide', external: true },
     ],
   },
