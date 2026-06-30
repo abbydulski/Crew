@@ -91,8 +91,24 @@ export async function PATCH(
     if (candidate.status === 'HIRED' && (becameHired || startDateChanged)) {
       try {
         if (candidate.conversion && becameHired) {
-          // Conversion hire: no tickets, just Slack notification to update Deel
+          // Conversion hire: no tickets, just Slack notification to update Deel.
           await notifyConversionSlack(candidate);
+          // Flip the original intern's AppUser employmentType so the tracker pill
+          // reflects the conversion. The intern stays active (endDate untouched).
+          if (candidate.convertedFromCandidateId) {
+            try {
+              const intern = await prisma.candidate.findUnique({
+                where: { id: candidate.convertedFromCandidateId },
+                include: { appUser: { select: { id: true } } },
+              });
+              if (intern?.appUser) {
+                await prisma.appUser.update({
+                  where: { id: intern.appUser.id },
+                  data: { employmentType: candidate.employmentType || 'Full-Time' },
+                });
+              }
+            } catch (err) { console.error('Failed to flip intern employmentType on conversion:', err); }
+          }
         } else if (!candidate.conversion) {
           const { created, ticketId } = await ensureDeelEmailTicket(candidate.id);
           if (created && ticketId) {

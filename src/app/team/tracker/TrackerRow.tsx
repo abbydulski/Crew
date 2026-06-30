@@ -42,7 +42,7 @@ export default function TrackerRow({ user: u, expanded, onToggle, showSalary, on
   // 3-month review window: hourly probation + intern conversion both hit at the same point.
   const reviewDue = isReviewDue(u);
   const reviewReason = u.employmentType === 'Intern' ? 'Intern' : 'Hourly';
-  // Show a pill for non-default employment types so interns / part-time / seasonal stand out.
+  // Show a pill for non-default employment types so interns / part-time stand out.
   const employmentPill = u.employmentType && u.employmentType !== 'Full-Time' ? u.employmentType : null;
 
   const deleteCheckin = async (checkinId: string) => {
