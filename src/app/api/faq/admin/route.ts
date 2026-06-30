@@ -3,14 +3,14 @@ import { getServerSession } from 'next-auth';
 import type { FaqStatus } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { requireFaqAdmin } from '@/lib/faq-auth';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const VALID_STATUSES = new Set<FaqStatus>(['PENDING', 'PUBLISHED', 'ARCHIVED']);
 
 /** GET /api/faq/admin — list all FAQs (admin only) */
 export async function GET() {
   const session = await getServerSession(authOptions);
-  const denial = requireFaqAdmin(session?.user?.email);
+  const denial = requireAdmin(session?.user?.email);
   if (denial) return denial;
 
   const items = await prisma.faq.findMany({
@@ -24,7 +24,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    const denial = requireFaqAdmin(session?.user?.email);
+    const denial = requireAdmin(session?.user?.email);
     if (denial) return denial;
 
     const body = await request.json();

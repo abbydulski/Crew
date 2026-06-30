@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import type { FaqStatus } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { requireFaqAdmin } from '@/lib/faq-auth';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const VALID_STATUSES = new Set<FaqStatus>(['PENDING', 'PUBLISHED', 'ARCHIVED']);
 
@@ -12,7 +12,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const { id } = await params;
     const session = await getServerSession(authOptions);
-    const denial = requireFaqAdmin(session?.user?.email);
+    const denial = requireAdmin(session?.user?.email);
     if (denial) return denial;
 
     const body = await request.json();
@@ -58,7 +58,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const session = await getServerSession(authOptions);
-    const denial = requireFaqAdmin(session?.user?.email);
+    const denial = requireAdmin(session?.user?.email);
     if (denial) return denial;
 
     await prisma.faq.delete({ where: { id } });
