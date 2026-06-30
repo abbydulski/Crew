@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CHECKIN_TYPE_LABEL, CheckinType, PROBATION_REVIEW_DAYS, TrackerCheckin, TrackerUser } from './types';
+import { CHECKIN_TYPE_LABEL, CheckinType, TrackerCheckin, TrackerUser, isReviewDue } from './types';
 import EditUserForm from './EditUserForm';
 import CheckinForm from './CheckinForm';
 
@@ -40,10 +40,7 @@ export default function TrackerRow({ user: u, expanded, onToggle, showSalary, on
     ? tenureDays !== null && tenureDays > 90
     : days !== null && days > 90;
   // 3-month review window: hourly probation + intern conversion both hit at the same point.
-  const inReviewWindow = tenureDays !== null
-    && tenureDays >= PROBATION_REVIEW_DAYS.start
-    && tenureDays <= PROBATION_REVIEW_DAYS.end;
-  const reviewDue = inReviewWindow && (u.salaryType === 'hourly' || u.employmentType === 'Intern');
+  const reviewDue = isReviewDue(u);
   const reviewReason = u.employmentType === 'Intern' ? 'Intern' : 'Hourly';
   // Show a pill for non-default employment types so interns / part-time / seasonal stand out.
   const employmentPill = u.employmentType && u.employmentType !== 'Full-Time' ? u.employmentType : null;

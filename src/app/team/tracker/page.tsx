@@ -1,12 +1,14 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageLoading from '@/components/PageLoading';
 import TrackerRow from './TrackerRow';
 import AddMemberForm from './AddMemberForm';
-import { TrackerUser, formatTenure, daysSince } from './types';
+import { TrackerUser, formatTenure, daysSince, isReviewDue } from './types';
 
 type SortKey = 'name' | 'tenure' | 'lastCheckin';
+type Tag = 'intern' | 'review';
 
 export default function TeamTrackerPage() {
   const [users, setUsers] = useState<TrackerUser[]>([]);
@@ -14,6 +16,7 @@ export default function TeamTrackerPage() {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('lastCheckin');
   const [managerFilter, setManagerFilter] = useState('');
+  const [tag, setTag] = useState<Tag | ''>('');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showSalary, setShowSalary] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -51,6 +54,12 @@ export default function TeamTrackerPage() {
       matches = matches.filter((u) => u.manager === managerFilter);
     }
 
+    if (tag === 'intern') {
+      matches = matches.filter((u) => u.employmentType === 'Intern');
+    } else if (tag === 'review') {
+      matches = matches.filter(isReviewDue);
+    }
+
     const sorted = [...matches];
     if (sort === 'name') {
       sorted.sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
@@ -69,7 +78,24 @@ export default function TeamTrackerPage() {
       });
     }
     return sorted;
-  }, [users, search, sort, managerFilter]);
+  }, [users, search, sort, managerFilter, tag]);
+
+  // Counts on the filter chips show how many would match each tag (with manager+search applied).
+  const tagCounts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const base = users.filter((u) => {
+      if (q && !((u.name || '').toLowerCase().includes(q)
+          || u.email.toLowerCase().includes(q)
+          || (u.team || '').toLowerCase().includes(q)
+          || (u.role || '').toLowerCase().includes(q))) return false;
+      if (managerFilter && u.manager !== managerFilter) return false;
+      return true;
+    });
+    return {
+      intern: base.filter((u) => u.employmentType === 'Intern').length,
+      review: base.filter(isReviewDue).length,
+    };
+  }, [users, search, managerFilter]);
 
   // Manager options come from the directory itself — anyone in the tracker
   // can be picked as someone else's manager. Sorted by name for the dropdown.
@@ -90,6 +116,10 @@ export default function TeamTrackerPage() {
           <p className="mt-1 text-[11px] text-[var(--text-secondary)]">{users.length} team member{users.length !== 1 ? 's' : ''} · tenure &amp; check-in log</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/team/alumni"
+            className="border border-[var(--border)] bg-[var(--card-background)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--foreground)] transition-colors shrink-0">
+            Alumni →
+          </Link>
           <button type="button" onClick={() => setShowAdd((v) => !v)}
             className="border border-[var(--border)] bg-[var(--foreground)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--background)] hover:opacity-80 transition-colors shrink-0">
             {showAdd ? 'Cancel' : '+ Add member'}
@@ -128,6 +158,17 @@ export default function TeamTrackerPage() {
           <button type="button" onClick={() => setManagerFilter('')}
             className="px-1 hover:text-[var(--foreground)]">Clear</button>
         )}
+        <span className="ml-2">Show:</span>
+        {(['intern', 'review'] as Tag[]).map((t) => (
+          <button key={t} type="button" onClick={() => setTag((cur) => (cur === t ? '' : t))}
+            className={`border px-2 py-1 text-[10px] font-black uppercase tracking-wider transition-colors ${
+              tag === t
+                ? 'border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]'
+                : 'border-[var(--border)] bg-[var(--card-background)] text-[var(--foreground)] hover:border-[var(--foreground)]'
+            }`}>
+            {t === 'intern' ? 'Interns' : 'Review due'} ({tagCounts[t]})
+          </button>
+        ))}
       </div>
 
       {error && <p className="mb-3 text-xs text-red-700">{error}</p>}

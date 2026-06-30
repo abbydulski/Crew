@@ -24,6 +24,8 @@ export interface TrackerUser {
   salaryType: string | null;
   equityShares: number | null;
   employmentType: string | null;
+  endDate: string | null;
+  endReason: string | null;
   lastCheckin: { id: string; type: CheckinType; loggedAt: string } | null;
   checkinCount: number;
   createdAt: string;
@@ -90,4 +92,12 @@ export function daysSince(iso: string | null | undefined): number | null {
   if (Number.isNaN(then)) return null;
   const ms = Date.now() - then;
   return Math.floor(ms / (1000 * 60 * 60 * 24));
+}
+
+/** Hourly + intern probation review flag — shared by TrackerRow + page filters. */
+export function isReviewDue(u: { startDate: string | null; employmentType: string | null; salaryType: string | null }): boolean {
+  const t = daysSince(u.startDate);
+  if (t === null) return false;
+  const inWindow = t >= PROBATION_REVIEW_DAYS.start && t <= PROBATION_REVIEW_DAYS.end;
+  return inWindow && (u.salaryType === 'hourly' || u.employmentType === 'Intern');
 }
