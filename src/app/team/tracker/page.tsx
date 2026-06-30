@@ -6,7 +6,7 @@ import TrackerRow from './TrackerRow';
 import AddMemberForm from './AddMemberForm';
 import { TrackerUser, formatTenure, daysSince } from './types';
 
-type SortKey = 'name' | 'tenure' | 'lastCheckin';
+type SortKey = 'name' | 'tenure' | 'lastCheckin' | 'manager';
 
 export default function TeamTrackerPage() {
   const [users, setUsers] = useState<TrackerUser[]>([]);
@@ -47,6 +47,17 @@ export default function TeamTrackerPage() {
         const ta = a.startDate ? new Date(a.startDate).getTime() : Infinity;
         const tb = b.startDate ? new Date(b.startDate).getTime() : Infinity;
         return ta - tb; // longest tenure first
+      });
+    } else if (sort === 'manager') {
+      // Group by manager (alpha), unmanaged rows at the bottom, then by name within each group.
+      sorted.sort((a, b) => {
+        const ma = a.manager || '';
+        const mb = b.manager || '';
+        if (!ma && mb) return 1;
+        if (ma && !mb) return -1;
+        const byManager = ma.localeCompare(mb);
+        if (byManager !== 0) return byManager;
+        return (a.name || a.email).localeCompare(b.name || b.email);
       });
     } else {
       // lastCheckin: oldest/never first so they pop to the top
@@ -100,10 +111,10 @@ export default function TeamTrackerPage() {
 
       <div className="mb-3 flex items-center gap-3 text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">
         <span>Sort:</span>
-        {(['lastCheckin', 'tenure', 'name'] as SortKey[]).map((k) => (
+        {(['lastCheckin', 'tenure', 'name', 'manager'] as SortKey[]).map((k) => (
           <button key={k} type="button" onClick={() => setSort(k)}
             className={`px-1 ${sort === k ? 'font-black text-[var(--foreground)] underline' : 'hover:text-[var(--foreground)]'}`}>
-            {k === 'lastCheckin' ? 'Days since check-in' : k === 'tenure' ? 'Tenure' : 'Name'}
+            {k === 'lastCheckin' ? 'Days since check-in' : k === 'tenure' ? 'Tenure' : k === 'manager' ? 'Manager' : 'Name'}
           </button>
         ))}
       </div>
