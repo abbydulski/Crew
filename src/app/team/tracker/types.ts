@@ -61,7 +61,6 @@ export const SALARY_TYPE_OPTIONS: { value: string; label: string }[] = [
 export const EMPLOYMENT_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: 'Full-Time', label: 'Full-Time' },
   { value: 'Part-Time', label: 'Part-Time' },
-  { value: 'Seasonal', label: 'Seasonal' },
   { value: 'Intern', label: 'Intern' },
 ];
 

@@ -9,7 +9,7 @@ const OFFICE_OPTIONS: { value: string; label: string }[] = [
   { value: 'Vegas', label: 'Las Vegas' },
   { value: 'Norcal', label: 'NorCal' },
 ];
-const EMPLOYMENT_OPTIONS = ['Full-Time', 'Part-Time', 'Seasonal', 'Intern'];
+const EMPLOYMENT_OPTIONS = ['Full-Time', 'Part-Time', 'Intern'];
 
 export default function RoleModal({ role, team, onClose, onSaved }: {
   role: Role | null;

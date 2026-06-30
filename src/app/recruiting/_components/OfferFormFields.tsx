@@ -69,7 +69,6 @@ export default function OfferFormFields({ startDate, setStartDate, salary, setSa
             <option value="">Select type...</option>
             <option value="Full-Time">Full-Time</option>
             <option value="Part-Time">Part-Time</option>
-            <option value="Seasonal">Seasonal</option>
             <option value="Intern">Intern</option>
           </select>
         </div>
