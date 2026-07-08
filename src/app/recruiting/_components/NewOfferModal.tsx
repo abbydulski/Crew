@@ -50,6 +50,24 @@ export default function NewOfferModal({ recruiters, onClose, onCreated }: {
     [internOptions, convertedFromCandidateId],
   );
 
+  // When an intern is picked, prefill identity/context fields from their record so
+  // the recruiter doesn't retype what we already know. Offer terms (salary, start
+  // date, equity, employment type) intentionally stay blank because they change on
+  // conversion — except we default employmentType to Full-Time since that's the point.
+  const handlePickIntern = (id: string) => {
+    setConvertedFromCandidateId(id);
+    const intern = internOptions.find((c) => c.id === id);
+    if (!intern) return;
+    setName(intern.name || '');
+    setEmail(intern.email || '');
+    setPhone(intern.phone || '');
+    setRole(intern.role || '');
+    setTeam(intern.team || '');
+    setOfficeLocation(intern.officeLocation || '');
+    setManager(intern.manager || '');
+    setEmploymentType('Full-Time');
+  };
+
   const isComplete = !!(startDate && salary && salaryType && manager && officeLocation && team && employmentType);
 
   const handleSave = async (offerStat: 'PENDING' | 'COMPLETE') => {
@@ -81,6 +99,42 @@ export default function NewOfferModal({ recruiters, onClose, onCreated }: {
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded bg-[var(--card-background)] p-6 shadow-md" onClick={e => e.stopPropagation()}>
         <h3 className="mb-5 text-xs font-black uppercase tracking-wide text-[var(--foreground)]">New Offer (Direct)</h3>
         <div className="space-y-4">
+          <div className="border border-[var(--border)] bg-[var(--background)] p-3">
+            <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              Converting an intern to Full-Time?
+            </label>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setConversion(false)}
+                className={`flex-1 border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${
+                  !conversion
+                    ? 'border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]'
+                    : 'border-[var(--border)] text-[var(--foreground)] hover:border-[var(--foreground)]'
+                }`}>No, new hire</button>
+              <button type="button" onClick={() => setConversion(true)}
+                className={`flex-1 border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${
+                  conversion
+                    ? 'border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]'
+                    : 'border-[var(--border)] text-[var(--foreground)] hover:border-[var(--foreground)]'
+                }`}>Yes, conversion</button>
+            </div>
+            {conversion && (
+              <div className="mt-3">
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Intern being converted</label>
+                <select value={convertedFromCandidateId} onChange={(e) => handlePickIntern(e.target.value)}
+                  className="w-full border border-[var(--border)] px-3 py-2 text-sm">
+                  <option value="">— Select intern —</option>
+                  {internOptions.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}{c.role ? ` · ${c.role}` : ''}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-[var(--border-light)]">
+                  {selectedIntern
+                    ? `Prefilled from ${selectedIntern.name}'s intern record. Edit anything below as needed.`
+                    : 'Picking an intern will prefill name, email, role, team, office, and manager.'}
+                </p>
+              </div>
+            )}
+          </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">Name *</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Candidate name"
@@ -120,24 +174,8 @@ export default function NewOfferModal({ recruiters, onClose, onCreated }: {
             officeLocation={officeLocation} setOfficeLocation={setOfficeLocation} equityShares={equityShares} setEquityShares={setEquityShares}
             team={team} setTeam={setTeam} employmentType={employmentType} setEmploymentType={setEmploymentType}
             conversion={conversion} setConversion={setConversion}
-            offerApproverEmail={offerApproverEmail} setOfferApproverEmail={setOfferApproverEmail} />
-          {conversion && (
-            <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Converting from intern</label>
-              <select value={convertedFromCandidateId} onChange={(e) => setConvertedFromCandidateId(e.target.value)}
-                className="w-full border border-[var(--border)] px-3 py-2 text-sm">
-                <option value="">— Not linked —</option>
-                {internOptions.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}{c.role ? ` · ${c.role}` : ''}</option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-[var(--border-light)]">
-                {selectedIntern
-                  ? `Will link this offer to ${selectedIntern.name}'s intern record.`
-                  : 'Pick the intern this conversion is for, or leave blank if none.'}
-              </p>
-            </div>
-          )}
+            offerApproverEmail={offerApproverEmail} setOfferApproverEmail={setOfferApproverEmail}
+            hideConversionToggle />
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={() => handleSave('COMPLETE')} disabled={isSubmitting}

@@ -21,7 +21,7 @@ function fetchApprovers(): Promise<Approver[]> {
   return approversPromise;
 }
 
-export default function OfferFormFields({ startDate, setStartDate, salary, setSalary, salaryType, setSalaryType, manager, setManager, officeLocation, setOfficeLocation, equityShares, setEquityShares, team, setTeam, employmentType, setEmploymentType, conversion, setConversion, offerApproverEmail, setOfferApproverEmail }: {
+export default function OfferFormFields({ startDate, setStartDate, salary, setSalary, salaryType, setSalaryType, manager, setManager, officeLocation, setOfficeLocation, equityShares, setEquityShares, team, setTeam, employmentType, setEmploymentType, conversion, setConversion, offerApproverEmail, setOfferApproverEmail, hideConversionToggle = false }: {
   startDate: string; setStartDate: (s: string) => void;
   salary: string; setSalary: (s: string) => void;
   salaryType: string; setSalaryType: (s: string) => void;
@@ -32,6 +32,7 @@ export default function OfferFormFields({ startDate, setStartDate, salary, setSa
   employmentType: string; setEmploymentType: (s: string) => void;
   conversion: boolean; setConversion: (b: boolean) => void;
   offerApproverEmail: string; setOfferApproverEmail: (s: string) => void;
+  hideConversionToggle?: boolean;
 }) {
   const lastSuggestedRef = useRef<string>('');
   const [approvers, setApprovers] = useState<Approver[]>([]);
@@ -131,13 +132,15 @@ export default function OfferFormFields({ startDate, setStartDate, salary, setSa
           <p className="mt-1 text-xs text-[var(--border-light)]">Auto-populated from salary. Edit as needed.</p>
         )}
       </div>
-      <div className="flex items-center justify-between">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Conversion</label>
-        <button type="button" onClick={() => setConversion(!conversion)}
-          className={`relative inline-flex h-5 w-9 shrink-0 border-2 border-transparent transition-colors ${conversion ? 'bg-[var(--foreground)]' : 'bg-[var(--border-light)]'}`}>
-          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${conversion ? 'translate-x-4' : 'translate-x-0'}`} />
-        </button>
-      </div>
+      {!hideConversionToggle && (
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Conversion</label>
+          <button type="button" onClick={() => setConversion(!conversion)}
+            className={`relative inline-flex h-5 w-9 shrink-0 border-2 border-transparent transition-colors ${conversion ? 'bg-[var(--foreground)]' : 'bg-[var(--border-light)]'}`}>
+            <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${conversion ? 'translate-x-4' : 'translate-x-0'}`} />
+          </button>
+        </div>
+      )}
     </>
   );
 }
