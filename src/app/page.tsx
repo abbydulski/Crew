@@ -21,6 +21,7 @@ const SECTIONS: Section[] = [
     items: [
       { href: '/team', label: 'Team Directory' },
       { href: '/faq', label: 'FAQ' },
+      { href: '/team/360-feedback', label: '360Feedback' },
       { href: 'https://drive.google.com/file/d/1u0ErNRY_ogHk69LQUWs_r525gkOX1bkp/view?usp=sharing', label: '2026 Benefits Guide', external: true },
     ],
   },
