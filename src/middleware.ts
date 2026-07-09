@@ -42,6 +42,6 @@ export default withAuth(
  */
 export const config = {
   matcher: [
-    '/((?!api/auth|api/cron|auth/signin|auth/error|_next/static|_next/image|favicon\\.ico|sitemap\\.xml|robots\\.txt|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$|.*\\.docx$).*)',
+    '/((?!api/auth|api/cron|auth/signin|auth/error|_next/static|_next/image|fonts/|favicon\\.ico|sitemap\\.xml|robots\\.txt|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$|.*\\.docx$|.*\\.otf$|.*\\.ttf$|.*\\.woff$|.*\\.woff2$).*)',
   ],
 };
