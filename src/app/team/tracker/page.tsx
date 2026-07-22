@@ -119,13 +119,6 @@ export default function TeamTrackerPage() {
     return { active: users.length, newThisQuarter, alumni: alumniCount };
   }, [users, alumniCount, now]);
 
-  // Upcoming conversions: interns with a planned conversion date, sorted soonest first.
-  const upcomingConversions = useMemo(() => {
-    return users
-      .filter((u) => u.employmentType === 'Intern' && u.plannedConversionDate)
-      .sort((a, b) => new Date(a.plannedConversionDate!).getTime() - new Date(b.plannedConversionDate!).getTime());
-  }, [users]);
-
   // Manager options come from the directory itself — anyone in the tracker
   // can be picked as someone else's manager. Sorted by name for the dropdown.
   const managerOptions = useMemo(() => {
@@ -176,32 +169,6 @@ export default function TeamTrackerPage() {
           </div>
         ))}
       </div>
-
-      {upcomingConversions.length > 0 && (
-        <div className="mb-4 border border-amber-300 bg-amber-50 p-4">
-          <h3 className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-amber-800">Upcoming Conversions ({upcomingConversions.length})</h3>
-          <div className="space-y-1">
-            {upcomingConversions.map((u) => {
-              const d = new Date(u.plannedConversionDate!);
-              const daysUntil = Math.ceil((d.getTime() - now) / (1000 * 60 * 60 * 24));
-              const past = daysUntil < 0;
-              return (
-                <div key={u.id} className="flex items-center gap-3 text-[11px] font-mono">
-                  <span className="font-black text-[var(--foreground)]">{u.name || u.email}</span>
-                  <span className="text-amber-700">{u.team || '—'}</span>
-                  <span className="text-amber-700">mgr: {u.manager || '—'}</span>
-                  <span className="ml-auto font-black">
-                    {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
-                  </span>
-                  <span className={`text-[9px] font-black uppercase ${past ? 'text-red-700' : 'text-amber-800'}`}>
-                    {past ? `${Math.abs(daysUntil)}d overdue` : `in ${daysUntil}d`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {showAdd && <AddMemberForm onCreated={load} onCancel={() => setShowAdd(false)} managerOptions={managerOptions} />}
 
