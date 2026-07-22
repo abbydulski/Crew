@@ -202,7 +202,7 @@ export default function HeadcountPlannerPage() {
                         <span className="text-[11px] font-black text-[var(--foreground)] min-w-0 truncate">{intern.name}</span>
                         <span className="text-[10px] text-[var(--text-secondary)] shrink-0">{intern.team}</span>
                         <div className="ml-auto flex items-center gap-2 shrink-0">
-                          {intern.startDate && <span className="text-[10px] font-black text-[var(--foreground)]">{new Date(intern.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}</span>}
+                          {intern.plannedConversionDate && <span className="text-[10px] font-black text-[var(--foreground)]">{new Date(intern.plannedConversionDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}</span>}
                           {overdue && <span className="bg-red-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-red-700">Overdue</span>}
                           {reviewDue && <span className="bg-[#EAEAEA] px-1.5 py-0.5 text-[8px] font-black uppercase text-[#81858C]">Review</span>}
                         </div>
