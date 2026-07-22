@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-auth';
 
-const VALID_TYPES = new Set<CheckinType>(['CHECK_IN', 'SALARY_CHANGE', 'PROMOTION', 'NOTE']);
+const VALID_TYPES = new Set<CheckinType>(['CHECK_IN', 'PROMOTION', 'NOTE']);
 
 /** GET /api/team/tracker/[id]/checkins — full event history for a user (admin only) */
 export async function GET(

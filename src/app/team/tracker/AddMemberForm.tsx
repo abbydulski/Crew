@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { EMPLOYMENT_TYPE_OPTIONS, OFFICE_OPTIONS, SALARY_TYPE_OPTIONS, TEAM_OPTIONS } from './types';
+import { EMPLOYMENT_TYPE_OPTIONS, OFFICE_OPTIONS, TEAM_OPTIONS } from './types';
 
 interface Props {
   onCreated: () => Promise<void>;
@@ -22,9 +22,6 @@ export default function AddMemberForm({ onCreated, onCancel, managerOptions }: P
   const [team, setTeam] = useState('');
   const [officeLocation, setOfficeLocation] = useState('');
   const [manager, setManager] = useState('');
-  const [salary, setSalary] = useState('');
-  const [salaryType, setSalaryType] = useState('');
-  const [equityShares, setEquityShares] = useState('');
   const [employmentType, setEmploymentType] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -41,9 +38,6 @@ export default function AddMemberForm({ onCreated, onCancel, managerOptions }: P
           name: name.trim() || null,
           startDate: startDate || null,
           role, team, officeLocation, manager,
-          salary: salary === '' ? null : Number(salary),
-          salaryType: salaryType || null,
-          equityShares: equityShares === '' ? null : Number(equityShares),
           employmentType: employmentType || null,
         }),
       });
@@ -108,27 +102,6 @@ export default function AddMemberForm({ onCreated, onCancel, managerOptions }: P
             <option value="">—</option>
             {EMPLOYMENT_TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
-        </div>
-      </div>
-
-      <div className="mt-4 border border-[var(--border-light)] bg-[var(--background)] p-3">
-        <p className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Compensation (optional)</p>
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <label className={labelClass}>Salary</label>
-            <input type="number" value={salary} onChange={(e) => setSalary(e.target.value)} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Type</label>
-            <select value={salaryType} onChange={(e) => setSalaryType(e.target.value)} className={inputClass}>
-              <option value="">—</option>
-              {SALARY_TYPE_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelClass}>Equity shares</label>
-            <input type="number" value={equityShares} onChange={(e) => setEquityShares(e.target.value)} className={inputClass} />
-          </div>
         </div>
       </div>
 

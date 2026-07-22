@@ -32,7 +32,7 @@ export async function GET() {
     const [activeUsers, openRoles] = await Promise.all([
       prisma.appUser.findMany({
         where: { endDate: null },
-        select: { team: true },
+        select: { id: true, name: true, email: true, team: true, employmentType: true, startDate: true, plannedConversionDate: true, manager: true },
       }),
       prisma.role.findMany({
         select: { team: true, title: true },
@@ -60,7 +60,25 @@ export async function GET() {
       { filled: 0, open: 0, projected: 0 }
     );
 
-    return NextResponse.json({ success: true, data: { teams: data, totals } });
+    // Build intern list for scenario planning on the client
+    const interns = activeUsers
+      .filter((u) => u.employmentType === 'Intern')
+      .map((u) => {
+        const startMs = u.startDate ? new Date(u.startDate).getTime() : null;
+        const daysSinceStart = startMs && !Number.isNaN(startMs) ? Math.floor((Date.now() - startMs) / (1000 * 60 * 60 * 24)) : null;
+        return {
+          id: u.id,
+          name: u.name || u.email,
+          team: normalizeTeam(u.team),
+          manager: u.manager || null,
+          startDate: u.startDate,
+          daysSinceStart,
+          plannedConversionDate: u.plannedConversionDate,
+        };
+      })
+      .sort((a, b) => (b.daysSinceStart ?? 0) - (a.daysSinceStart ?? 0));
+
+    return NextResponse.json({ success: true, data: { teams: data, totals, interns } });
   } catch (err) {
     console.error('Failed to load planning data:', err);
     return NextResponse.json({ success: false, error: 'Failed to load' }, { status: 500 });

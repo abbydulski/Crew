@@ -16,7 +16,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, email, startDate, role, team, officeLocation, manager, salary, salaryType, equityShares, employmentType, endDate, endReason } = body as {
+    const { name, email, startDate, role, team, officeLocation, manager, employmentType, plannedConversionDate, endDate, endReason } = body as {
       name?: string | null;
       email?: string;
       startDate?: string | null;
@@ -24,10 +24,8 @@ export async function PATCH(
       team?: string | null;
       officeLocation?: string | null;
       manager?: string | null;
-      salary?: number | string | null;
-      salaryType?: string | null;
-      equityShares?: number | string | null;
       employmentType?: string | null;
+      plannedConversionDate?: string | null;
       endDate?: string | null;
       endReason?: string | null;
     };
@@ -46,10 +44,8 @@ export async function PATCH(
     if (team !== undefined)           data.team           = team || null;
     if (officeLocation !== undefined) data.officeLocation = officeLocation || null;
     if (manager !== undefined)        data.manager        = manager || null;
-    if (salary !== undefined)         data.salary         = salary === null || salary === '' ? null : Number(salary);
-    if (salaryType !== undefined)     data.salaryType     = salaryType || null;
-    if (equityShares !== undefined)   data.equityShares   = equityShares === null || equityShares === '' ? null : Number(equityShares);
     if (employmentType !== undefined) data.employmentType = employmentType || null;
+    if (plannedConversionDate !== undefined) data.plannedConversionDate = plannedConversionDate ? new Date(plannedConversionDate) : null;
     if (endDate !== undefined)        data.endDate        = endDate ? new Date(endDate) : null;
     if (endReason !== undefined)      data.endReason      = endReason || null;
 

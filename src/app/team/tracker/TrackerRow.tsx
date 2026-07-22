@@ -9,14 +9,13 @@ interface Props {
   user: TrackerUser;
   expanded: boolean;
   onToggle: () => void;
-  showSalary: boolean;
   onChanged: () => Promise<void>;
   formatTenure: (iso: string | null) => string;
   daysSince: (iso: string | null | undefined) => number | null;
   managerOptions: { name: string; email: string }[];
 }
 
-export default function TrackerRow({ user: u, expanded, onToggle, showSalary, onChanged, formatTenure, daysSince, managerOptions }: Props) {
+export default function TrackerRow({ user: u, expanded, onToggle, onChanged, formatTenure, daysSince, managerOptions }: Props) {
   const [history, setHistory] = useState<TrackerCheckin[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -39,9 +38,8 @@ export default function TrackerRow({ user: u, expanded, onToggle, showSalary, on
   const overdue = noneYet
     ? tenureDays !== null && tenureDays > 90
     : days !== null && days > 90;
-  // 3-month review window: hourly probation + intern conversion both hit at the same point.
+  // 3-month review window for interns — flags when their conversion decision is due.
   const reviewDue = isReviewDue(u);
-  const reviewReason = u.employmentType === 'Intern' ? 'Intern' : 'Hourly';
   // Intern past the 90-day mark without conversion — flag red so it doesn't slip.
   const internOverdue = isInternOverdue(u);
   // Show a pill for non-default employment types so interns / part-time stand out.
@@ -90,7 +88,7 @@ export default function TrackerRow({ user: u, expanded, onToggle, showSalary, on
           ) : reviewDue && (
             <span
               className="bg-amber-100 text-amber-900 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider shrink-0"
-              title={`${reviewReason} 3-month review due (${90 - (tenureDays ?? 0)} day${90 - (tenureDays ?? 0) === 1 ? '' : 's'} to 3 mo mark)`}
+              title={`Intern 3-month review due (${90 - (tenureDays ?? 0)} day${90 - (tenureDays ?? 0) === 1 ? '' : 's'} to 3 mo mark)`}
             >
               Review
             </span>
@@ -115,7 +113,7 @@ export default function TrackerRow({ user: u, expanded, onToggle, showSalary, on
         <div className="grid gap-6 border-t border-[var(--border-light)] bg-[var(--card-background)] p-5 lg:grid-cols-2">
           <div>
             <h4 className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Details</h4>
-            <EditUserForm user={u} showSalary={showSalary} onSaved={onChanged} managerOptions={managerOptions} />
+            <EditUserForm user={u} onSaved={onChanged} managerOptions={managerOptions} />
           </div>
           <div>
             <h4 className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Log event</h4>

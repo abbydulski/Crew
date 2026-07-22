@@ -8,7 +8,7 @@ interface Props {
   onLogged: () => Promise<void>;
 }
 
-const TYPES: CheckinType[] = ['CHECK_IN', 'SALARY_CHANGE', 'PROMOTION', 'NOTE'];
+const TYPES: CheckinType[] = ['CHECK_IN', 'PROMOTION', 'NOTE'];
 
 export default function CheckinForm({ userId, onLogged }: Props) {
   const [type, setType] = useState<CheckinType>('CHECK_IN');

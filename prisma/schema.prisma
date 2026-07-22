@@ -52,7 +52,6 @@ enum FaqStatus {
 
 enum CheckinType {
   CHECK_IN
-  SALARY_CHANGE
   PROMOTION
   NOTE
 }
@@ -80,6 +79,7 @@ model AppUser {
   salaryType         String?
   equityShares       Float?
   employmentType     String?
+  plannedConversionDate DateTime?
   endDate            DateTime?
   endReason          String?
 

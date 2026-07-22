@@ -19,7 +19,7 @@ export default function TeamTrackerPage() {
   const [managerFilter, setManagerFilter] = useState('');
   const [tag, setTag] = useState<Tag | ''>('');
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [showSalary, setShowSalary] = useState(false);
+
   const [showAdd, setShowAdd] = useState(false);
   const [error, setError] = useState('');
 
@@ -105,14 +105,26 @@ export default function TeamTrackerPage() {
     };
   }, [users, search, managerFilter]);
 
+  // Capture `now` once on mount so useMemo stays pure across re-renders.
+  const [now] = useState(() => Date.now());
+
   // Fast facts: active headcount, new this quarter (last 90 days), alumni total.
   const facts = useMemo(() => {
+    const ninetyDaysAgo = now - 90 * 24 * 60 * 60 * 1000;
     const newThisQuarter = users.filter((u) => {
-      const t = daysSince(u.startDate);
-      return t !== null && t >= 0 && t <= 90;
+      if (!u.startDate) return false;
+      const t = new Date(u.startDate).getTime();
+      return !Number.isNaN(t) && t >= ninetyDaysAgo && t <= now;
     }).length;
     return { active: users.length, newThisQuarter, alumni: alumniCount };
-  }, [users, alumniCount]);
+  }, [users, alumniCount, now]);
+
+  // Upcoming conversions: interns with a planned conversion date, sorted soonest first.
+  const upcomingConversions = useMemo(() => {
+    return users
+      .filter((u) => u.employmentType === 'Intern' && u.plannedConversionDate)
+      .sort((a, b) => new Date(a.plannedConversionDate!).getTime() - new Date(b.plannedConversionDate!).getTime());
+  }, [users]);
 
   // Manager options come from the directory itself — anyone in the tracker
   // can be picked as someone else's manager. Sorted by name for the dropdown.
@@ -145,14 +157,7 @@ export default function TeamTrackerPage() {
             className="border border-[var(--border)] bg-[var(--foreground)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--background)] hover:opacity-80 transition-colors shrink-0">
             {showAdd ? 'Cancel' : '+ Add member'}
           </button>
-          <button type="button" onClick={() => setShowSalary((v) => !v)}
-            className={`border px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
-              showSalary
-                ? 'border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]'
-                : 'border-[var(--border)] bg-[var(--card-background)] text-[var(--foreground)] hover:border-[var(--foreground)]'
-            }`}>
-            {showSalary ? 'Hide salary' : 'Show salary'}
-          </button>
+
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, email, team…"
             className="border border-[var(--border)] bg-[var(--card-background)] px-3 py-1.5 text-[11px] w-56" />
@@ -171,6 +176,32 @@ export default function TeamTrackerPage() {
           </div>
         ))}
       </div>
+
+      {upcomingConversions.length > 0 && (
+        <div className="mb-4 border border-amber-300 bg-amber-50 p-4">
+          <h3 className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-amber-800">Upcoming Conversions ({upcomingConversions.length})</h3>
+          <div className="space-y-1">
+            {upcomingConversions.map((u) => {
+              const d = new Date(u.plannedConversionDate!);
+              const daysUntil = Math.ceil((d.getTime() - now) / (1000 * 60 * 60 * 24));
+              const past = daysUntil < 0;
+              return (
+                <div key={u.id} className="flex items-center gap-3 text-[11px] font-mono">
+                  <span className="font-black text-[var(--foreground)]">{u.name || u.email}</span>
+                  <span className="text-amber-700">{u.team || '—'}</span>
+                  <span className="text-amber-700">mgr: {u.manager || '—'}</span>
+                  <span className="ml-auto font-black">
+                    {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
+                  </span>
+                  <span className={`text-[9px] font-black uppercase ${past ? 'text-red-700' : 'text-amber-800'}`}>
+                    {past ? `${Math.abs(daysUntil)}d overdue` : `in ${daysUntil}d`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {showAdd && <AddMemberForm onCreated={load} onCancel={() => setShowAdd(false)} managerOptions={managerOptions} />}
 
@@ -226,7 +257,6 @@ export default function TeamTrackerPage() {
               user={u}
               expanded={expanded === u.id}
               onToggle={() => setExpanded((cur) => (cur === u.id ? null : u.id))}
-              showSalary={showSalary}
               onChanged={load}
               formatTenure={formatTenure}
               daysSince={daysSince}

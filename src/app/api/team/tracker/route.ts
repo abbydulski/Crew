@@ -34,10 +34,8 @@ export async function GET() {
     team: u.team,
     officeLocation: u.officeLocation,
     manager: u.manager,
-    salary: u.salary,
-    salaryType: u.salaryType,
-    equityShares: u.equityShares,
     employmentType: u.employmentType,
+    plannedConversionDate: u.plannedConversionDate,
     endDate: u.endDate,
     endReason: u.endReason,
     lastCheckin: u.checkins[0] || null,
@@ -70,16 +68,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, startDate, role, team, officeLocation, manager, salary, salaryType, equityShares, employmentType } = body as {
+    const { name, startDate, role, team, officeLocation, manager, employmentType } = body as {
       name?: string | null;
       startDate?: string | null;
       role?: string | null;
       team?: string | null;
       officeLocation?: string | null;
       manager?: string | null;
-      salary?: number | string | null;
-      salaryType?: string | null;
-      equityShares?: number | string | null;
       employmentType?: string | null;
     };
 
@@ -92,9 +87,6 @@ export async function POST(request: Request) {
         team: team?.trim() || null,
         officeLocation: officeLocation?.trim() || null,
         manager: manager?.trim() || null,
-        salary: salary === null || salary === '' || salary === undefined ? null : Number(salary),
-        salaryType: salaryType?.trim() || null,
-        equityShares: equityShares === null || equityShares === '' || equityShares === undefined ? null : Number(equityShares),
         employmentType: employmentType?.trim() || null,
       },
     });

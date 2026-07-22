@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { EMPLOYMENT_TYPE_OPTIONS, OFFICE_OPTIONS, SALARY_TYPE_OPTIONS, TEAM_OPTIONS, TrackerUser } from './types';
+import { EMPLOYMENT_TYPE_OPTIONS, OFFICE_OPTIONS, TEAM_OPTIONS, TrackerUser } from './types';
 
 interface Props {
   user: TrackerUser;
-  showSalary: boolean;
   onSaved: () => Promise<void>;
   managerOptions: { name: string; email: string }[];
 }
@@ -15,7 +14,7 @@ const inputClass =
 const labelClass =
   'mb-1 block text-[9px] font-black uppercase tracking-[0.15em] text-[var(--text-secondary)]';
 
-export default function EditUserForm({ user, showSalary, onSaved, managerOptions }: Props) {
+export default function EditUserForm({ user, onSaved, managerOptions }: Props) {
   const [name, setName] = useState(user.name || '');
   const [email, setEmail] = useState(user.email);
   const [startDate, setStartDate] = useState(user.startDate ? user.startDate.slice(0, 10) : '');
@@ -23,10 +22,8 @@ export default function EditUserForm({ user, showSalary, onSaved, managerOptions
   const [team, setTeam] = useState(user.team || '');
   const [officeLocation, setOfficeLocation] = useState(user.officeLocation || '');
   const [manager, setManager] = useState(user.manager || '');
-  const [salary, setSalary] = useState(user.salary !== null ? String(user.salary) : '');
-  const [salaryType, setSalaryType] = useState(user.salaryType || '');
-  const [equityShares, setEquityShares] = useState(user.equityShares !== null ? String(user.equityShares) : '');
   const [employmentType, setEmploymentType] = useState(user.employmentType || '');
+  const [plannedConversionDate, setPlannedConversionDate] = useState(user.plannedConversionDate ? user.plannedConversionDate.slice(0, 10) : '');
   const [endDate, setEndDate] = useState(user.endDate ? user.endDate.slice(0, 10) : '');
   const [endReason, setEndReason] = useState(user.endReason || '');
   const [saving, setSaving] = useState(false);
@@ -45,10 +42,8 @@ export default function EditUserForm({ user, showSalary, onSaved, managerOptions
           email: email.trim(),
           startDate: startDate || null,
           role, team, officeLocation, manager,
-          salary: salary === '' ? null : Number(salary),
-          salaryType: salaryType || null,
-          equityShares: equityShares === '' ? null : Number(equityShares),
           employmentType: employmentType || null,
+          plannedConversionDate: plannedConversionDate || null,
           endDate: endDate || null,
           endReason: endReason || null,
         }),
@@ -63,21 +58,16 @@ export default function EditUserForm({ user, showSalary, onSaved, managerOptions
   const convertToFT = async () => {
     const label = user.name || user.email;
     if (!confirm(`Convert ${label} to Full-Time?\n\nThis flips employmentType to Full-Time and logs a Promotion check-in. Use Recruiting → New Offer → Conversion for a formal offer letter.`)) return;
-    const newSalary = prompt('New annual salary (optional — leave blank to keep current):', '');
     setConverting(true); setError('');
     try {
       const res = await fetch(`/api/team/tracker/${user.id}/convert-ft`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          salary: newSalary && newSalary.trim() ? Number(newSalary) : null,
-          salaryType: newSalary && newSalary.trim() ? 'annual' : null,
-        }),
+        body: JSON.stringify({}),
       });
       const data = await res.json();
       if (data.success) {
         setEmploymentType('Full-Time');
-        if (newSalary && newSalary.trim()) { setSalary(newSalary.trim()); setSalaryType('annual'); }
         await onSaved();
       } else { setError(data.error || 'Failed to convert'); }
     } catch { setError('Failed to convert'); }
@@ -157,29 +147,15 @@ export default function EditUserForm({ user, showSalary, onSaved, managerOptions
         </div>
       </div>
 
-      {showSalary ? (
-        <div className="border border-[var(--border-light)] bg-[var(--background)] p-3">
-          <p className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Compensation (admin-only)</p>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className={labelClass}>Salary</label>
-              <input type="number" value={salary} onChange={(e) => setSalary(e.target.value)} className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Type</label>
-              <select value={salaryType} onChange={(e) => setSalaryType(e.target.value)} className={inputClass}>
-                <option value="">—</option>
-                {SALARY_TYPE_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>Equity shares</label>
-              <input type="number" value={equityShares} onChange={(e) => setEquityShares(e.target.value)} className={inputClass} />
-            </div>
+      {employmentType === 'Intern' && (
+        <div className="border border-amber-300 bg-amber-50 p-3">
+          <p className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-amber-800">Plan Conversion</p>
+          <div>
+            <label className={labelClass}>Target conversion date</label>
+            <input type="date" value={plannedConversionDate} onChange={(e) => setPlannedConversionDate(e.target.value)} className={inputClass} />
           </div>
+          <p className="mt-1 text-[9px] text-amber-700">Set the date this intern should convert to FT. Shows in the Upcoming Conversions panel and on the planner.</p>
         </div>
-      ) : (
-        <p className="text-[10px] uppercase tracking-wider text-[var(--border-light)]">Compensation hidden — toggle &quot;Show salary&quot; above to reveal.</p>
       )}
 
       <div className="border border-[var(--border-light)] bg-[var(--background)] p-3">

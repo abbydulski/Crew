@@ -1,4 +1,4 @@
-export type CheckinType = 'CHECK_IN' | 'SALARY_CHANGE' | 'PROMOTION' | 'NOTE';
+export type CheckinType = 'CHECK_IN' | 'PROMOTION' | 'NOTE';
 
 export interface TrackerCheckin {
   id: string;
@@ -20,10 +20,8 @@ export interface TrackerUser {
   team: string | null;
   officeLocation: string | null;
   manager: string | null;
-  salary: number | null;
-  salaryType: string | null;
-  equityShares: number | null;
   employmentType: string | null;
+  plannedConversionDate: string | null;
   endDate: string | null;
   endReason: string | null;
   lastCheckin: { id: string; type: CheckinType; loggedAt: string } | null;
@@ -34,7 +32,6 @@ export interface TrackerUser {
 
 export const CHECKIN_TYPE_LABEL: Record<CheckinType, string> = {
   CHECK_IN: 'Check-in',
-  SALARY_CHANGE: 'Salary change',
   PROMOTION: 'Promotion',
   NOTE: 'Note',
 };
@@ -52,11 +49,6 @@ export const TEAM_OPTIONS: { value: string; label: string }[] = [
   { value: 'Hardware', label: 'Hardware' },
   { value: 'Software', label: 'Software' },
   { value: 'Field', label: 'Field' },
-];
-
-export const SALARY_TYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'annual', label: 'Annual' },
-  { value: 'hourly', label: 'Hourly' },
 ];
 
 /** Employment types — mirrors the Recruiting offer form. */
@@ -94,12 +86,12 @@ export function daysSince(iso: string | null | undefined): number | null {
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
-/** Hourly + intern probation review flag — shared by TrackerRow + page filters. */
-export function isReviewDue(u: { startDate: string | null; employmentType: string | null; salaryType: string | null }): boolean {
+/** Intern probation review flag — shared by TrackerRow + page filters. */
+export function isReviewDue(u: { startDate: string | null; employmentType: string | null }): boolean {
   const t = daysSince(u.startDate);
   if (t === null) return false;
   const inWindow = t >= PROBATION_REVIEW_DAYS.start && t <= PROBATION_REVIEW_DAYS.end;
-  return inWindow && (u.salaryType === 'hourly' || u.employmentType === 'Intern');
+  return inWindow && u.employmentType === 'Intern';
 }
 
 /** Intern past their 90-day mark and still classified as Intern — needs attention. */
