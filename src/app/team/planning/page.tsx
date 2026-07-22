@@ -105,14 +105,14 @@ export default function HeadcountPlannerPage() {
           <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Employment Mix</div>
           <div className="flex h-5 w-full overflow-hidden border border-[var(--border-light)]">
             <div className="h-full bg-[var(--foreground)] transition-all" style={{ width: `${ftPct}%` }} title={`Full-Time: ${scenario.ft}`} />
-            <div className="h-full bg-violet-400 transition-all" style={{ width: `${internPct}%` }} title={`Intern: ${scenario.intern}`} />
+            <div className="h-full bg-[#81858C] transition-all" style={{ width: `${internPct}%` }} title={`Intern: ${scenario.intern}`} />
             {scenario.other > 0 && <div className="h-full bg-[var(--border-light)] transition-all" style={{ width: `${100 - ftPct - internPct}%` }} title={`Other: ${scenario.other}`} />}
           </div>
           <div className="mt-2 flex flex-wrap gap-4 text-[9px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
             <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-[var(--foreground)]" /> FT {scenario.ft}</span>
-            <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-violet-400" /> Intern {scenario.intern}</span>
+            <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-[#81858C]" /> Intern {scenario.intern}</span>
             {scenario.other > 0 && <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-[var(--border-light)]" /> Other {scenario.other}</span>}
-            {scenario.incoming > 0 && <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-emerald-400" /> Incoming {scenario.incoming}</span>}
+            {scenario.incoming > 0 && <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-[#00B0FF]" /> Incoming {scenario.incoming}</span>}
             {scenario.converting > 0 && <span className="ml-auto text-[var(--foreground)] font-black">+{scenario.converting} converting to FT</span>}
           </div>
         </div>
@@ -122,8 +122,8 @@ export default function HeadcountPlannerPage() {
 
       {/* Incoming hires banner */}
       {incomingHires.length > 0 && (
-        <div className="mb-6 border border-emerald-300 bg-emerald-50 p-4">
-          <h3 className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-emerald-800">
+        <div className="mb-6 border border-[#00B0FF]/30 bg-[#00B0FF]/5 p-4">
+          <h3 className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#0090D0]">
             Incoming Hires ({incomingHires.length})
           </h3>
           <div className="grid gap-1">
@@ -132,14 +132,14 @@ export default function HeadcountPlannerPage() {
               const daysUntil = startDate ? Math.ceil((startDate.getTime() - now) / (1000 * 60 * 60 * 24)) : null;
               return (
                 <div key={h.id} className="flex items-center gap-3 text-[11px] font-mono">
-                  <span className="font-black text-emerald-900">{h.name}</span>
-                  <span className="text-emerald-700">{h.team}</span>
-                  <span className="text-emerald-600">{h.role || '—'}</span>
-                  {h.employmentType && <span className="text-[9px] uppercase text-emerald-600">{h.employmentType}</span>}
+                  <span className="font-black text-[#007AB8]">{h.name}</span>
+                  <span className="text-[#0090D0]">{h.team}</span>
+                  <span className="text-[#00B0FF]">{h.role || '—'}</span>
+                  {h.employmentType && <span className="text-[9px] uppercase text-[#00B0FF]">{h.employmentType}</span>}
                   {startDate && (
-                    <span className="ml-auto text-emerald-700 font-black">
+                    <span className="ml-auto text-[#0090D0] font-black">
                       {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
-                      {daysUntil !== null && <span className="ml-1 font-normal text-emerald-600">({daysUntil > 0 ? `in ${daysUntil}d` : daysUntil === 0 ? 'today' : `${Math.abs(daysUntil)}d ago`})</span>}
+                      {daysUntil !== null && <span className="ml-1 font-normal text-[#00B0FF]">({daysUntil > 0 ? `in ${daysUntil}d` : daysUntil === 0 ? 'today' : `${Math.abs(daysUntil)}d ago`})</span>}
                     </span>
                   )}
                 </div>
@@ -194,7 +194,7 @@ export default function HeadcountPlannerPage() {
                       <div className="ml-auto flex items-center gap-2 shrink-0">
                         {days !== null && <span className="text-[10px] font-mono text-[var(--text-secondary)]">{days}d</span>}
                         {overdue && <span className="bg-red-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-red-700">Overdue</span>}
-                        {reviewDue && <span className="bg-violet-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-violet-700">Review</span>}
+                        {reviewDue && <span className="bg-[#EAEAEA] px-1.5 py-0.5 text-[8px] font-black uppercase text-[#81858C]">Review</span>}
                       </div>
                     </label>
                   );
@@ -237,16 +237,16 @@ export default function HeadcountPlannerPage() {
                   <div>
                     <div className="flex h-6 w-full border border-[var(--border-light)] bg-[var(--background)]" title={r.openTitles.length ? `Open: ${r.openTitles.join(', ')}` : undefined}>
                       <div className="h-full bg-[var(--foreground)]" style={{ width: `${ftPctBar}%` }} title={`FT: ${teamFt}`} />
-                      {internPctBar > 0 && <div className="h-full bg-violet-400" style={{ width: `${internPctBar}%` }} title={`Intern: ${teamIntern}`} />}
-                      {incomingPct > 0 && <div className="h-full bg-emerald-400" style={{ width: `${incomingPct}%` }} title={`Incoming: ${r.incoming}`} />}
+                      {internPctBar > 0 && <div className="h-full bg-[#81858C]" style={{ width: `${internPctBar}%` }} title={`Intern: ${teamIntern}`} />}
+                      {incomingPct > 0 && <div className="h-full bg-[#00B0FF]" style={{ width: `${incomingPct}%` }} title={`Incoming: ${r.incoming}`} />}
                       <div className="h-full border-l border-[var(--background)] bg-[var(--foreground)] opacity-30" style={{ width: `${openPct}%` }} />
                     </div>
                   </div>
                   <div className="text-right">
                     <div>
                       <span className="font-black text-[var(--foreground)]">{teamFt} FT</span>
-                      {teamIntern > 0 && <span className="text-violet-600"> · {teamIntern} Intern</span>}
-                      {r.incoming > 0 && <span className="text-emerald-600"> +{r.incoming} incoming</span>}
+                      {teamIntern > 0 && <span className="text-[#81858C]"> · {teamIntern} Intern</span>}
+                      {r.incoming > 0 && <span className="text-[#00B0FF]"> +{r.incoming} incoming</span>}
                       <span className="text-[var(--text-secondary)]"> +{r.open} open</span>
                     </div>
                   </div>
@@ -267,7 +267,7 @@ export default function HeadcountPlannerPage() {
                       <div className="mb-3">
                         <div className="flex h-3 w-full overflow-hidden border border-[var(--border-light)]">
                           <div className="h-full bg-[var(--foreground)] transition-all" style={{ width: `${teamFtPct}%` }} />
-                          <div className="h-full bg-violet-400 transition-all" style={{ width: `${teamInternPct}%` }} />
+                          <div className="h-full bg-[#81858C] transition-all" style={{ width: `${teamInternPct}%` }} />
                           {otherMembers.length > 0 && <div className="h-full bg-[var(--border-light)] transition-all" style={{ width: `${100 - teamFtPct - teamInternPct}%` }} />}
                         </div>
                         <div className="mt-1 flex gap-3 text-[8px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
@@ -287,7 +287,7 @@ export default function HeadcountPlannerPage() {
                               <span className="font-black text-[var(--foreground)] min-w-0 truncate">{m.name}</span>
                               <span className="text-[var(--text-secondary)] truncate">{m.role || '\u2014'}</span>
                               {m.employmentType === 'Intern' && convertIds.has(m.id) && (
-                                <span className="ml-auto shrink-0 bg-blue-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-blue-700">Converting</span>
+                                <span className="ml-auto shrink-0 bg-[#FF6621]/10 px-1.5 py-0.5 text-[8px] font-black uppercase text-[#FF6621]">Converting</span>
                               )}
                             </div>
                           ))}
@@ -297,13 +297,13 @@ export default function HeadcountPlannerPage() {
                     {/* Interns */}
                     {internMembers.length > 0 && (
                       <>
-                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-violet-700">Interns ({internMembers.length})</div>
+                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-[#81858C]">Interns ({internMembers.length})</div>
                         <div className="grid gap-1 mb-3">
                           {internMembers.map((m) => (
                             <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
                               <span className="font-black text-[var(--foreground)] min-w-0 truncate">{m.name}</span>
                               <span className="text-[var(--text-secondary)] truncate">{m.role || '\u2014'}</span>
-                              <span className="ml-auto shrink-0 bg-violet-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-violet-700">Intern</span>
+                              <span className="ml-auto shrink-0 bg-[#EAEAEA] px-1.5 py-0.5 text-[8px] font-black uppercase text-[#81858C]">Intern</span>
                             </div>
                           ))}
                         </div>
@@ -327,14 +327,14 @@ export default function HeadcountPlannerPage() {
                     {/* Incoming */}
                     {incomingMembers.length > 0 && (
                       <>
-                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-emerald-700">Incoming ({incomingMembers.length})</div>
+                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-[#0090D0]">Incoming ({incomingMembers.length})</div>
                         <div className="grid gap-1 mb-3">
                           {incomingMembers.map((m) => (
                             <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
-                              <span className="font-black text-emerald-800 min-w-0 truncate">{m.name}</span>
-                              <span className="text-emerald-600 truncate">{m.role || '\u2014'}</span>
+                              <span className="font-black text-[#0090D0] min-w-0 truncate">{m.name}</span>
+                              <span className="text-[#00B0FF] truncate">{m.role || '\u2014'}</span>
                               {m.employmentType && (
-                                <span className="ml-auto shrink-0 bg-emerald-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-emerald-700">{m.employmentType}</span>
+                                <span className="ml-auto shrink-0 bg-[#00B0FF]/10 px-1.5 py-0.5 text-[8px] font-black uppercase text-[#0090D0]">{m.employmentType}</span>
                               )}
                             </div>
                           ))}
