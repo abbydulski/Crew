@@ -101,3 +101,10 @@ export function isReviewDue(u: { startDate: string | null; employmentType: strin
   const inWindow = t >= PROBATION_REVIEW_DAYS.start && t <= PROBATION_REVIEW_DAYS.end;
   return inWindow && (u.salaryType === 'hourly' || u.employmentType === 'Intern');
 }
+
+/** Intern past their 90-day mark and still classified as Intern — needs attention. */
+export function isInternOverdue(u: { startDate: string | null; employmentType: string | null }): boolean {
+  const t = daysSince(u.startDate);
+  if (t === null) return false;
+  return t > PROBATION_REVIEW_DAYS.end && u.employmentType === 'Intern';
+}

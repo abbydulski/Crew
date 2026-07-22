@@ -5,13 +5,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageLoading from '@/components/PageLoading';
 import TrackerRow from './TrackerRow';
 import AddMemberForm from './AddMemberForm';
-import { TrackerUser, formatTenure, daysSince, isReviewDue } from './types';
+import { TrackerUser, formatTenure, daysSince, isReviewDue, isInternOverdue } from './types';
 
 type SortKey = 'name' | 'tenure' | 'lastCheckin';
-type Tag = 'intern' | 'review';
+type Tag = 'intern' | 'review' | 'overdue';
 
 export default function TeamTrackerPage() {
   const [users, setUsers] = useState<TrackerUser[]>([]);
+  const [alumniCount, setAlumniCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('lastCheckin');
@@ -24,10 +25,14 @@ export default function TeamTrackerPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/team/tracker');
-      const data = await res.json();
-      if (data.success) setUsers(data.data);
-      else setError(data.error || 'Failed to load');
+      const [tRes, aRes] = await Promise.all([
+        fetch('/api/team/tracker'),
+        fetch('/api/team/tracker/alumni'),
+      ]);
+      const tData = await tRes.json();
+      const aData = await aRes.json();
+      if (tData.success) setUsers(tData.data); else setError(tData.error || 'Failed to load');
+      if (aData.success) setAlumniCount(aData.data.length);
     } catch { setError('Failed to load'); }
   }, []);
 
@@ -58,6 +63,8 @@ export default function TeamTrackerPage() {
       matches = matches.filter((u) => u.employmentType === 'Intern');
     } else if (tag === 'review') {
       matches = matches.filter(isReviewDue);
+    } else if (tag === 'overdue') {
+      matches = matches.filter(isInternOverdue);
     }
 
     const sorted = [...matches];
@@ -94,8 +101,18 @@ export default function TeamTrackerPage() {
     return {
       intern: base.filter((u) => u.employmentType === 'Intern').length,
       review: base.filter(isReviewDue).length,
+      overdue: base.filter(isInternOverdue).length,
     };
   }, [users, search, managerFilter]);
+
+  // Fast facts: active headcount, new this quarter (last 90 days), alumni total.
+  const facts = useMemo(() => {
+    const newThisQuarter = users.filter((u) => {
+      const t = daysSince(u.startDate);
+      return t !== null && t >= 0 && t <= 90;
+    }).length;
+    return { active: users.length, newThisQuarter, alumni: alumniCount };
+  }, [users, alumniCount]);
 
   // Manager options come from the directory itself — anyone in the tracker
   // can be picked as someone else's manager. Sorted by name for the dropdown.
@@ -116,6 +133,10 @@ export default function TeamTrackerPage() {
           <p className="mt-1 text-[11px] text-[var(--text-secondary)]">{users.length} team member{users.length !== 1 ? 's' : ''} · tenure &amp; check-in log</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/team/planning"
+            className="border border-[var(--border)] bg-[var(--card-background)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--foreground)] transition-colors shrink-0">
+            Planning →
+          </Link>
           <Link href="/team/alumni"
             className="border border-[var(--border)] bg-[var(--card-background)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--foreground)] transition-colors shrink-0">
             Alumni →
@@ -136,6 +157,19 @@ export default function TeamTrackerPage() {
             placeholder="Search name, email, team…"
             className="border border-[var(--border)] bg-[var(--card-background)] px-3 py-1.5 text-[11px] w-56" />
         </div>
+      </div>
+
+      <div className="mb-4 grid grid-cols-3 gap-3">
+        {[
+          { label: 'Active headcount', value: facts.active },
+          { label: 'New this quarter', value: facts.newThisQuarter },
+          { label: 'Alumni total', value: facts.alumni },
+        ].map((f) => (
+          <div key={f.label} className="border border-[var(--border)] bg-[var(--card-background)] px-4 py-3">
+            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">{f.label}</div>
+            <div className="mt-1 font-mono text-2xl font-black text-[var(--foreground)]">{f.value}</div>
+          </div>
+        ))}
       </div>
 
       {showAdd && <AddMemberForm onCreated={load} onCancel={() => setShowAdd(false)} managerOptions={managerOptions} />}
@@ -159,14 +193,14 @@ export default function TeamTrackerPage() {
             className="px-1 hover:text-[var(--foreground)]">Clear</button>
         )}
         <span className="ml-2">Show:</span>
-        {(['intern', 'review'] as Tag[]).map((t) => (
+        {(['intern', 'review', 'overdue'] as Tag[]).map((t) => (
           <button key={t} type="button" onClick={() => setTag((cur) => (cur === t ? '' : t))}
             className={`border px-2 py-1 text-[10px] font-black uppercase tracking-wider transition-colors ${
               tag === t
                 ? 'border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]'
                 : 'border-[var(--border)] bg-[var(--card-background)] text-[var(--foreground)] hover:border-[var(--foreground)]'
             }`}>
-            {t === 'intern' ? 'Interns' : 'Review due'} ({tagCounts[t]})
+            {t === 'intern' ? 'Interns' : t === 'review' ? 'Review due' : 'Overdue'} ({tagCounts[t]})
           </button>
         ))}
       </div>

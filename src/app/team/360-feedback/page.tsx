@@ -3,7 +3,7 @@
 // Swap this ID once the Google Form is created (Send → embed HTML → copy /d/e/... segment).
 // The form should include an optional "Your name (leave blank to stay anonymous)" question
 // at the top and have "Collect email addresses" turned OFF.
-const FORM_EMBED_ID = '1FAIpQLSdc00uMQs9NHUp2Z1rJ_QTdwf47rcJ94nzRxzXbGmjyWjR_uQ';
+const FORM_EMBED_ID: string = '1FAIpQLSdc00uMQs9NHUp2Z1rJ_QTdwf47rcJ94nzRxzXbGmjyWjR_uQ';
 
 const FORM_URL = `https://docs.google.com/forms/d/e/${FORM_EMBED_ID}/viewform?embedded=true`;
 

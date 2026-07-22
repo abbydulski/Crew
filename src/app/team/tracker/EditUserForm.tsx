@@ -31,6 +31,7 @@ export default function EditUserForm({ user, showSalary, onSaved, managerOptions
   const [endReason, setEndReason] = useState(user.endReason || '');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [converting, setConverting] = useState(false);
   const [error, setError] = useState('');
 
   const save = async () => {
@@ -57,6 +58,30 @@ export default function EditUserForm({ user, showSalary, onSaved, managerOptions
       else setError(data.error || 'Failed to save');
     } catch { setError('Failed to save'); }
     finally { setSaving(false); }
+  };
+
+  const convertToFT = async () => {
+    const label = user.name || user.email;
+    if (!confirm(`Convert ${label} to Full-Time?\n\nThis flips employmentType to Full-Time and logs a Promotion check-in. Use Recruiting → New Offer → Conversion for a formal offer letter.`)) return;
+    const newSalary = prompt('New annual salary (optional — leave blank to keep current):', '');
+    setConverting(true); setError('');
+    try {
+      const res = await fetch(`/api/team/tracker/${user.id}/convert-ft`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          salary: newSalary && newSalary.trim() ? Number(newSalary) : null,
+          salaryType: newSalary && newSalary.trim() ? 'annual' : null,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEmploymentType('Full-Time');
+        if (newSalary && newSalary.trim()) { setSalary(newSalary.trim()); setSalaryType('annual'); }
+        await onSaved();
+      } else { setError(data.error || 'Failed to convert'); }
+    } catch { setError('Failed to convert'); }
+    finally { setConverting(false); }
   };
 
   const remove = async () => {
@@ -174,14 +199,20 @@ export default function EditUserForm({ user, showSalary, onSaved, managerOptions
       {error && <p className="text-[10px] text-red-700">{error}</p>}
 
       <div className="flex items-center gap-2">
-        <button type="button" disabled={saving || deleting} onClick={save}
+        <button type="button" disabled={saving || deleting || converting} onClick={save}
           className="border border-[var(--border)] bg-[var(--foreground)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--background)] hover:opacity-80 disabled:opacity-30 transition-colors">
           {saving ? 'Saving…' : 'Save'}
         </button>
+        {employmentType === 'Intern' && (
+          <button type="button" disabled={saving || deleting || converting} onClick={convertToFT}
+            className="border border-[var(--foreground)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)] disabled:opacity-30 transition-colors">
+            {converting ? 'Converting…' : 'Convert to FT'}
+          </button>
+        )}
         {user.candidateId && (
           <span className="text-[9px] uppercase tracking-wider text-[var(--border-light)]">linked to candidate</span>
         )}
-        <button type="button" disabled={saving || deleting} onClick={remove}
+        <button type="button" disabled={saving || deleting || converting} onClick={remove}
           className="ml-auto border border-red-700 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-red-700 hover:bg-red-700 hover:text-[var(--background)] disabled:opacity-30 transition-colors">
           {deleting ? 'Deleting…' : 'Delete'}
         </button>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CHECKIN_TYPE_LABEL, CheckinType, TrackerCheckin, TrackerUser, isReviewDue } from './types';
+import { CHECKIN_TYPE_LABEL, CheckinType, TrackerCheckin, TrackerUser, isReviewDue, isInternOverdue } from './types';
 import EditUserForm from './EditUserForm';
 import CheckinForm from './CheckinForm';
 
@@ -42,6 +42,8 @@ export default function TrackerRow({ user: u, expanded, onToggle, showSalary, on
   // 3-month review window: hourly probation + intern conversion both hit at the same point.
   const reviewDue = isReviewDue(u);
   const reviewReason = u.employmentType === 'Intern' ? 'Intern' : 'Hourly';
+  // Intern past the 90-day mark without conversion — flag red so it doesn't slip.
+  const internOverdue = isInternOverdue(u);
   // Show a pill for non-default employment types so interns / part-time stand out.
   const employmentPill = u.employmentType && u.employmentType !== 'Full-Time' ? u.employmentType : null;
 
@@ -78,7 +80,14 @@ export default function TrackerRow({ user: u, expanded, onToggle, showSalary, on
         </div>
         <div className="font-mono flex items-center gap-1.5 min-w-0">
           <span className="truncate">{formatTenure(u.startDate)}</span>
-          {reviewDue && (
+          {internOverdue ? (
+            <span
+              className="bg-red-100 text-red-800 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider shrink-0"
+              title={`Intern past the 3-month mark by ${(tenureDays ?? 0) - 90} day${(tenureDays ?? 0) - 90 === 1 ? '' : 's'} — convert or offboard`}
+            >
+              Overdue
+            </span>
+          ) : reviewDue && (
             <span
               className="bg-amber-100 text-amber-900 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider shrink-0"
               title={`${reviewReason} 3-month review due (${90 - (tenureDays ?? 0)} day${90 - (tenureDays ?? 0) === 1 ? '' : 's'} to 3 mo mark)`}
