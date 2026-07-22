@@ -245,30 +245,88 @@ export default function HeadcountPlannerPage() {
                     </div>
                   </div>
                 </button>
-                {isExpanded && (
+                {isExpanded && (() => {
+                  const active = r.members.filter((m) => !m.incoming);
+                  const ftMembers = active.filter((m) => (m.employmentType === 'Full-Time' || !m.employmentType) || (m.employmentType === 'Intern' && convertIds.has(m.id)));
+                  const internMembers = active.filter((m) => m.employmentType === 'Intern' && !convertIds.has(m.id));
+                  const otherMembers = active.filter((m) => m.employmentType && m.employmentType !== 'Full-Time' && m.employmentType !== 'Intern');
+                  const incomingMembers = r.members.filter((m) => m.incoming);
+                  const teamTotal = active.length;
+                  const teamFtPct = teamTotal > 0 ? Math.round((ftMembers.length / teamTotal) * 100) : 0;
+                  const teamInternPct = teamTotal > 0 ? Math.round((internMembers.length / teamTotal) * 100) : 0;
+                  return (
                   <div className="border-t border-[var(--border-light)] bg-[var(--background)] px-4 py-3">
-                    {/* Active members */}
-                    <div className="mb-2 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">People ({r.members.filter((m) => !m.incoming).length})</div>
-                    <div className="grid gap-1 mb-3">
-                      {r.members.filter((m) => !m.incoming).map((m) => (
-                        <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
-                          <span className="font-black text-[var(--foreground)] min-w-0 truncate">{m.name}</span>
-                          <span className="text-[var(--text-secondary)] truncate">{m.role || '—'}</span>
-                          {m.employmentType && m.employmentType !== 'Full-Time' && (
-                            <span className="ml-auto shrink-0 bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-amber-700">{m.employmentType}</span>
-                          )}
+                    {/* Per-team mix bar */}
+                    {teamTotal > 0 && (
+                      <div className="mb-3">
+                        <div className="flex h-3 w-full overflow-hidden border border-[var(--border-light)]">
+                          <div className="h-full bg-[var(--foreground)] transition-all" style={{ width: `${teamFtPct}%` }} />
+                          <div className="h-full bg-amber-400 transition-all" style={{ width: `${teamInternPct}%` }} />
+                          {otherMembers.length > 0 && <div className="h-full bg-[var(--border-light)] transition-all" style={{ width: `${100 - teamFtPct - teamInternPct}%` }} />}
                         </div>
-                      ))}
-                    </div>
-                    {/* Incoming hires for this team */}
-                    {r.members.some((m) => m.incoming) && (
+                        <div className="mt-1 flex gap-3 text-[8px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
+                          <span>FT {ftMembers.length} ({teamFtPct}%)</span>
+                          {internMembers.length > 0 && <span>Intern {internMembers.length} ({teamInternPct}%)</span>}
+                          {otherMembers.length > 0 && <span>Other {otherMembers.length}</span>}
+                        </div>
+                      </div>
+                    )}
+                    {/* Full-Time */}
+                    {ftMembers.length > 0 && (
                       <>
-                        <div className="mb-2 text-[8px] font-black uppercase tracking-[0.2em] text-emerald-700">Incoming ({r.members.filter((m) => m.incoming).length})</div>
+                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Full-Time ({ftMembers.length})</div>
                         <div className="grid gap-1 mb-3">
-                          {r.members.filter((m) => m.incoming).map((m) => (
+                          {ftMembers.map((m) => (
+                            <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
+                              <span className="font-black text-[var(--foreground)] min-w-0 truncate">{m.name}</span>
+                              <span className="text-[var(--text-secondary)] truncate">{m.role || '\u2014'}</span>
+                              {m.employmentType === 'Intern' && convertIds.has(m.id) && (
+                                <span className="ml-auto shrink-0 bg-blue-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-blue-700">Converting</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {/* Interns */}
+                    {internMembers.length > 0 && (
+                      <>
+                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-amber-700">Interns ({internMembers.length})</div>
+                        <div className="grid gap-1 mb-3">
+                          {internMembers.map((m) => (
+                            <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
+                              <span className="font-black text-[var(--foreground)] min-w-0 truncate">{m.name}</span>
+                              <span className="text-[var(--text-secondary)] truncate">{m.role || '\u2014'}</span>
+                              <span className="ml-auto shrink-0 bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-amber-700">Intern</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {/* Other */}
+                    {otherMembers.length > 0 && (
+                      <>
+                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Other ({otherMembers.length})</div>
+                        <div className="grid gap-1 mb-3">
+                          {otherMembers.map((m) => (
+                            <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
+                              <span className="font-black text-[var(--foreground)] min-w-0 truncate">{m.name}</span>
+                              <span className="text-[var(--text-secondary)] truncate">{m.role || '\u2014'}</span>
+                              <span className="ml-auto shrink-0 bg-gray-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-gray-600">{m.employmentType}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {/* Incoming */}
+                    {incomingMembers.length > 0 && (
+                      <>
+                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-emerald-700">Incoming ({incomingMembers.length})</div>
+                        <div className="grid gap-1 mb-3">
+                          {incomingMembers.map((m) => (
                             <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
                               <span className="font-black text-emerald-800 min-w-0 truncate">{m.name}</span>
-                              <span className="text-emerald-600 truncate">{m.role || '—'}</span>
+                              <span className="text-emerald-600 truncate">{m.role || '\u2014'}</span>
                               {m.employmentType && (
                                 <span className="ml-auto shrink-0 bg-emerald-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-emerald-700">{m.employmentType}</span>
                               )}
@@ -280,11 +338,11 @@ export default function HeadcountPlannerPage() {
                     {/* Open roles */}
                     {r.openTitles.length > 0 && (
                       <>
-                        <div className="mb-2 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Open Roles ({r.openTitles.length})</div>
+                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Open Roles ({r.openTitles.length})</div>
                         <div className="grid gap-1">
                           {r.openTitles.map((title, i) => (
                             <div key={i} className="flex items-center gap-2 text-[11px] font-mono text-[var(--text-secondary)]">
-                              <span className="text-[var(--border-light)]">○</span>
+                              <span className="text-[var(--border-light)]">{'\u25CB'}</span>
                               {title}
                             </div>
                           ))}
@@ -292,7 +350,8 @@ export default function HeadcountPlannerPage() {
                       </>
                     )}
                   </div>
-                )}
+                  );
+                })()}
               </div>
             );
           })}
