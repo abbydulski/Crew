@@ -116,7 +116,7 @@ export default function TrackerRow({ user: u, expanded, onToggle, onChanged, for
             <EditUserForm user={u} onSaved={onChanged} managerOptions={managerOptions} />
           </div>
           <div>
-            <h4 className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Log event</h4>
+            <h4 className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-[#0090D0]">Log event</h4>
             <CheckinForm userId={u.id} onLogged={async () => { await loadHistory(); await onChanged(); }} />
 
             <h4 className="mt-6 mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">History ({u.checkinCount})</h4>
