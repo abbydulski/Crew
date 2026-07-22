@@ -32,19 +32,24 @@ export async function GET() {
     const [activeUsers, openRoles] = await Promise.all([
       prisma.appUser.findMany({
         where: { endDate: null },
-        select: { id: true, name: true, email: true, team: true, employmentType: true, startDate: true, plannedConversionDate: true, manager: true },
+        select: { id: true, name: true, email: true, team: true, role: true, employmentType: true, startDate: true, plannedConversionDate: true, manager: true },
       }),
       prisma.role.findMany({
         select: { team: true, title: true },
       }),
     ]);
 
-    const teams = new Map<string, { filled: number; open: number; openTitles: string[] }>();
+    interface TeamMember { id: string; name: string; role: string | null; employmentType: string | null }
+    const teams = new Map<string, { filled: number; open: number; openTitles: string[]; members: TeamMember[] }>();
     const ensure = (t: string) => {
-      if (!teams.has(t)) teams.set(t, { filled: 0, open: 0, openTitles: [] });
+      if (!teams.has(t)) teams.set(t, { filled: 0, open: 0, openTitles: [], members: [] });
       return teams.get(t)!;
     };
-    for (const u of activeUsers) ensure(normalizeTeam(u.team)).filled += 1;
+    for (const u of activeUsers) {
+      const entry = ensure(normalizeTeam(u.team));
+      entry.filled += 1;
+      entry.members.push({ id: u.id, name: u.name || u.email, role: u.role, employmentType: u.employmentType });
+    }
     for (const r of openRoles) {
       const entry = ensure(normalizeTeam(r.team));
       entry.open += 1;
@@ -52,13 +57,28 @@ export async function GET() {
     }
 
     const data = Array.from(teams.entries())
-      .map(([team, v]) => ({ team, ...v, projected: v.filled + v.open }))
+      .map(([team, v]) => ({
+        team,
+        filled: v.filled,
+        open: v.open,
+        projected: v.filled + v.open,
+        openTitles: v.openTitles,
+        members: v.members.sort((a, b) => (a.name).localeCompare(b.name)),
+      }))
       .sort((a, b) => b.projected - a.projected || a.team.localeCompare(b.team));
 
-    const totals = data.reduce(
-      (acc, t) => ({ filled: acc.filled + t.filled, open: acc.open + t.open, projected: acc.projected + t.projected }),
-      { filled: 0, open: 0, projected: 0 }
-    );
+    // Employment type breakdown
+    const ftCount = activeUsers.filter((u) => u.employmentType === 'Full-Time').length;
+    const internCount = activeUsers.filter((u) => u.employmentType === 'Intern').length;
+    const otherCount = activeUsers.length - ftCount - internCount;
+
+    const totals = {
+      ...data.reduce(
+        (acc, t) => ({ filled: acc.filled + t.filled, open: acc.open + t.open, projected: acc.projected + t.projected }),
+        { filled: 0, open: 0, projected: 0 }
+      ),
+      ftCount, internCount, otherCount,
+    };
 
     // Build intern list for scenario planning on the client
     const interns = activeUsers

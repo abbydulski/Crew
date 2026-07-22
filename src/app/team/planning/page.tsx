@@ -5,33 +5,24 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageLoading from '@/components/PageLoading';
 import { PROBATION_REVIEW_DAYS } from '../tracker/types';
 
-interface TeamRow {
-  team: string;
-  filled: number;
-  open: number;
-  projected: number;
-  openTitles: string[];
-}
-
-interface Intern {
-  id: string;
-  name: string;
-  team: string;
-  startDate: string | null;
-  daysSinceStart: number | null;
-  plannedConversionDate: string | null;
-}
-
-interface Totals { filled: number; open: number; projected: number }
+/* ── Types ── */
+interface TeamMember { id: string; name: string; role: string | null; employmentType: string | null }
+interface TeamRow { team: string; filled: number; open: number; projected: number; openTitles: string[]; members: TeamMember[] }
+interface Intern { id: string; name: string; team: string; startDate: string | null; daysSinceStart: number | null; plannedConversionDate: string | null }
+interface Totals { filled: number; open: number; projected: number; ftCount: number; internCount: number; otherCount: number }
 
 export default function HeadcountPlannerPage() {
   const [rows, setRows] = useState<TeamRow[]>([]);
-  const [totals, setTotals] = useState<Totals>({ filled: 0, open: 0, projected: 0 });
+  const [totals, setTotals] = useState<Totals>({ filled: 0, open: 0, projected: 0, ftCount: 0, internCount: 0, otherCount: 0 });
   const [interns, setInterns] = useState<Intern[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  // Set of intern IDs the user has toggled to "convert" in the scenario
+
+  // Scenario: which interns to convert
   const [convertIds, setConvertIds] = useState<Set<string>>(new Set());
+  // UI toggles
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -48,38 +39,36 @@ export default function HeadcountPlannerPage() {
   useEffect(() => { load().finally(() => setIsLoading(false)); }, [load]);
 
   const toggleConvert = (id: string) => {
-    setConvertIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
+    setConvertIds((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   };
 
-  const selectAll = () => setConvertIds(new Set(interns.map((i) => i.id)));
-  const selectNone = () => setConvertIds(new Set());
-
-  // Adjusted totals: each converted intern is one fewer intern, but stays in filled count (now FT).
-  // No headcount change — they just shift from "Intern" to "Full-Time" in the mix.
-  const scenarioFtGain = convertIds.size;
-
-  const adjustedTotals = useMemo(() => ({
-    filled: totals.filled,
-    open: totals.open,
-    projected: totals.projected,
-    internCount: interns.length - scenarioFtGain,
-    ftGain: scenarioFtGain,
-  }), [totals, interns.length, scenarioFtGain]);
+  // Scenario-adjusted counts
+  const scenario = useMemo(() => {
+    const converting = convertIds.size;
+    return {
+      filled: totals.filled,
+      ft: totals.ftCount + converting,
+      intern: totals.internCount - converting,
+      other: totals.otherCount,
+      open: totals.open,
+      projected: totals.projected,
+      converting,
+    };
+  }, [totals, convertIds.size]);
 
   if (isLoading) return <PageLoading />;
 
   const maxProjected = Math.max(1, ...rows.map((r) => r.projected));
+  const ftPct = scenario.filled > 0 ? Math.round((scenario.ft / scenario.filled) * 100) : 0;
+  const internPct = scenario.filled > 0 ? Math.round((scenario.intern / scenario.filled) * 100) : 0;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Header */}
       <div className="mb-6 flex items-end justify-between gap-4 border-b border-[var(--border)] pb-4">
         <div>
           <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--foreground)]">Headcount Planner</h2>
-          <p className="mt-1 text-[11px] text-[var(--text-secondary)]">Filled vs. open roles per team · scenario planning</p>
+          <p className="mt-1 text-[11px] text-[var(--text-secondary)]">Click teams to drill down · toggle intern conversions to model scenarios</p>
         </div>
         <Link href="/team/tracker"
           className="border border-[var(--border)] bg-[var(--card-background)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--foreground)] transition-colors shrink-0">
@@ -88,12 +77,13 @@ export default function HeadcountPlannerPage() {
       </div>
 
       {/* Summary tiles */}
-      <div className="mb-6 grid grid-cols-4 gap-3">
+      <div className="mb-6 grid grid-cols-5 gap-3">
         {[
-          { label: 'Headcount', value: adjustedTotals.filled, sub: `${adjustedTotals.internCount} intern${adjustedTotals.internCount !== 1 ? 's' : ''}` },
-          { label: 'Open roles', value: adjustedTotals.open, sub: 'to hire' },
-          { label: 'Projected', value: adjustedTotals.projected, sub: `+${adjustedTotals.open} if all filled` },
-          { label: 'Conversions', value: adjustedTotals.ftGain, sub: scenarioFtGain > 0 ? 'intern → FT' : 'none selected' },
+          { label: 'Headcount', value: scenario.filled, sub: 'active' },
+          { label: 'Full-Time', value: scenario.ft, sub: `${ftPct}%` },
+          { label: 'Interns', value: scenario.intern, sub: `${internPct}%` },
+          { label: 'Open Roles', value: scenario.open, sub: 'to hire' },
+          { label: 'Projected', value: scenario.projected, sub: `if all filled` },
         ].map((f) => (
           <div key={f.label} className="border border-[var(--border)] bg-[var(--card-background)] px-4 py-3">
             <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">{f.label}</div>
@@ -103,60 +93,83 @@ export default function HeadcountPlannerPage() {
         ))}
       </div>
 
-      {error && <p className="mb-3 text-xs text-red-700">{error}</p>}
-
-      {/* Intern conversion selector */}
-      {interns.length > 0 && (
-        <div className="mb-6 border border-[var(--border)] bg-[var(--card-background)]">
-          <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-2">
-            <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-              Convert Interns to Full-Time ({convertIds.size}/{interns.length})
-            </h3>
-            <div className="flex gap-2">
-              <button type="button" onClick={selectAll}
-                className="text-[9px] font-black uppercase tracking-wider text-[var(--foreground)] hover:underline">
-                Select all
-              </button>
-              <span className="text-[var(--border-light)]">·</span>
-              <button type="button" onClick={selectNone}
-                className="text-[9px] font-black uppercase tracking-wider text-[var(--foreground)] hover:underline">
-                Clear
-              </button>
-            </div>
+      {/* Headcount mix bar */}
+      {scenario.filled > 0 && (
+        <div className="mb-6 border border-[var(--border)] bg-[var(--card-background)] p-4">
+          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Employment Mix</div>
+          <div className="flex h-5 w-full overflow-hidden border border-[var(--border-light)]">
+            <div className="h-full bg-[var(--foreground)] transition-all" style={{ width: `${ftPct}%` }} title={`Full-Time: ${scenario.ft}`} />
+            <div className="h-full bg-amber-400 transition-all" style={{ width: `${internPct}%` }} title={`Intern: ${scenario.intern}`} />
+            {scenario.other > 0 && <div className="h-full bg-[var(--border-light)] transition-all" style={{ width: `${100 - ftPct - internPct}%` }} title={`Other: ${scenario.other}`} />}
           </div>
-          <div className="divide-y divide-[var(--border-light)]">
-            {interns.map((intern) => {
-              const checked = convertIds.has(intern.id);
-              const days = intern.daysSinceStart;
-              const overdue = days !== null && days > PROBATION_REVIEW_DAYS.end;
-              const reviewDue = days !== null && days >= PROBATION_REVIEW_DAYS.start && days <= PROBATION_REVIEW_DAYS.end;
-              return (
-                <label key={intern.id}
-                  className={`flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--background)] ${checked ? 'bg-[var(--background)]' : ''}`}>
-                  <input type="checkbox" checked={checked} onChange={() => toggleConvert(intern.id)}
-                    className="h-3.5 w-3.5 accent-[var(--foreground)]" />
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[11px] font-black text-[var(--foreground)]">{intern.name}</span>
-                    <span className="ml-2 text-[10px] text-[var(--text-secondary)]">{intern.team}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-[var(--text-secondary)]">
-                    {days !== null && <span>{days}d tenure</span>}
-                    {overdue && <span className="bg-red-100 px-1.5 py-0.5 text-[9px] font-black uppercase text-red-700">Overdue</span>}
-                    {reviewDue && <span className="bg-amber-100 px-1.5 py-0.5 text-[9px] font-black uppercase text-amber-700">Review</span>}
-                    {intern.plannedConversionDate && (
-                      <span className="text-[9px] uppercase text-[var(--text-secondary)]">
-                        conv {new Date(intern.plannedConversionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </span>
-                    )}
-                  </div>
-                </label>
-              );
-            })}
+          <div className="mt-2 flex gap-4 text-[9px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
+            <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-[var(--foreground)]" /> FT {scenario.ft}</span>
+            <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-amber-400" /> Intern {scenario.intern}</span>
+            {scenario.other > 0 && <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-[var(--border-light)]" /> Other {scenario.other}</span>}
+            {scenario.converting > 0 && <span className="ml-auto text-[var(--foreground)] font-black">+{scenario.converting} converting to FT</span>}
           </div>
         </div>
       )}
 
-      {/* Team bars */}
+      {error && <p className="mb-3 text-xs text-red-700">{error}</p>}
+
+      {/* Collapsible intern conversion panel */}
+      {interns.length > 0 && (
+        <div className="mb-6 border border-[var(--border)]">
+          <button type="button" onClick={() => setConvertOpen((v) => !v)}
+            className="flex w-full items-center justify-between bg-[var(--card-background)] px-4 py-3 text-left hover:bg-[var(--background)] transition-colors">
+            <div className="flex items-center gap-3">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+                Scenario: Convert Interns → FT
+              </span>
+              {convertIds.size > 0 && (
+                <span className="bg-[var(--foreground)] px-2 py-0.5 text-[9px] font-black text-[var(--background)]">
+                  {convertIds.size} selected
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] font-mono text-[var(--text-secondary)]">{convertOpen ? '▲' : '▼'}</span>
+          </button>
+          {convertOpen && (
+            <div>
+              <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--background)] px-4 py-1.5">
+                <span className="text-[9px] text-[var(--text-secondary)]">Check interns to simulate converting them to full-time</span>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setConvertIds(new Set(interns.map((i) => i.id)))}
+                    className="text-[9px] font-black uppercase tracking-wider text-[var(--foreground)] hover:underline">All</button>
+                  <span className="text-[var(--border-light)]">·</span>
+                  <button type="button" onClick={() => setConvertIds(new Set())}
+                    className="text-[9px] font-black uppercase tracking-wider text-[var(--foreground)] hover:underline">None</button>
+                </div>
+              </div>
+              <div className="max-h-64 overflow-y-auto divide-y divide-[var(--border-light)]">
+                {interns.map((intern) => {
+                  const checked = convertIds.has(intern.id);
+                  const days = intern.daysSinceStart;
+                  const overdue = days !== null && days > PROBATION_REVIEW_DAYS.end;
+                  const reviewDue = days !== null && days >= PROBATION_REVIEW_DAYS.start && days <= PROBATION_REVIEW_DAYS.end;
+                  return (
+                    <label key={intern.id}
+                      className={`flex cursor-pointer items-center gap-3 px-4 py-2 transition-colors hover:bg-[var(--background)] ${checked ? 'bg-[var(--background)]' : ''}`}>
+                      <input type="checkbox" checked={checked} onChange={() => toggleConvert(intern.id)}
+                        className="h-3.5 w-3.5 accent-[var(--foreground)]" />
+                      <span className="text-[11px] font-black text-[var(--foreground)] min-w-0 truncate">{intern.name}</span>
+                      <span className="text-[10px] text-[var(--text-secondary)] shrink-0">{intern.team}</span>
+                      <div className="ml-auto flex items-center gap-2 shrink-0">
+                        {days !== null && <span className="text-[10px] font-mono text-[var(--text-secondary)]">{days}d</span>}
+                        {overdue && <span className="bg-red-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-red-700">Overdue</span>}
+                        {reviewDue && <span className="bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-amber-700">Review</span>}
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Team breakdown */}
       {rows.length === 0 ? (
         <div className="border border-dashed border-[var(--border-light)] bg-[var(--card-background)] p-10 text-center">
           <p className="text-[11px] uppercase tracking-wider text-[var(--border-light)]">No teams to plan yet — add team members or post open roles.</p>
@@ -171,24 +184,56 @@ export default function HeadcountPlannerPage() {
           {rows.map((r) => {
             const filledPct = (r.filled / maxProjected) * 100;
             const openPct = (r.open / maxProjected) * 100;
+            const isExpanded = expandedTeam === r.team;
             return (
-              <div key={r.team} className="grid grid-cols-[120px_1fr_140px] items-center gap-3 border-t border-[var(--border-light)] px-4 py-3 text-[11px] font-mono">
-                <div className="font-black uppercase tracking-wider text-[var(--foreground)]">{r.team}</div>
-                <div>
-                  <div className="flex h-6 w-full border border-[var(--border-light)] bg-[var(--background)]" title={r.openTitles.length ? `Open: ${r.openTitles.join(', ')}` : undefined}>
-                    <div className="h-full bg-[var(--foreground)]" style={{ width: `${filledPct}%` }} />
-                    <div className="h-full border-l border-[var(--background)] bg-[var(--foreground)] opacity-30" style={{ width: `${openPct}%` }} />
+              <div key={r.team}>
+                <button type="button" onClick={() => setExpandedTeam(isExpanded ? null : r.team)}
+                  className={`grid w-full grid-cols-[120px_1fr_140px] items-center gap-3 border-t border-[var(--border-light)] px-4 py-3 text-left text-[11px] font-mono transition-colors hover:bg-[var(--background)] ${isExpanded ? 'bg-[var(--background)]' : ''}`}>
+                  <div className="font-black uppercase tracking-wider text-[var(--foreground)] flex items-center gap-1">
+                    <span className="text-[9px] text-[var(--text-secondary)]">{isExpanded ? '▼' : '▶'}</span>
+                    {r.team}
                   </div>
-                  {r.openTitles.length > 0 && (
-                    <div className="mt-1 text-[9px] uppercase tracking-wider text-[var(--text-secondary)] truncate" title={r.openTitles.join(', ')}>
-                      Open: {r.openTitles.join(', ')}
+                  <div>
+                    <div className="flex h-6 w-full border border-[var(--border-light)] bg-[var(--background)]" title={r.openTitles.length ? `Open: ${r.openTitles.join(', ')}` : undefined}>
+                      <div className="h-full bg-[var(--foreground)]" style={{ width: `${filledPct}%` }} />
+                      <div className="h-full border-l border-[var(--background)] bg-[var(--foreground)] opacity-30" style={{ width: `${openPct}%` }} />
                     </div>
-                  )}
-                </div>
-                <div className="text-right">
-                  <div><span className="font-black text-[var(--foreground)]">{r.filled}</span> <span className="text-[var(--text-secondary)]">+ {r.open} open</span></div>
-                  <div className="text-[9px] uppercase tracking-wider text-[var(--border-light)]">→ {r.projected} projected</div>
-                </div>
+                  </div>
+                  <div className="text-right">
+                    <div><span className="font-black text-[var(--foreground)]">{r.filled}</span> <span className="text-[var(--text-secondary)]">+ {r.open} open</span></div>
+                  </div>
+                </button>
+                {isExpanded && (
+                  <div className="border-t border-[var(--border-light)] bg-[var(--background)] px-4 py-3">
+                    {/* Members */}
+                    <div className="mb-2 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">People ({r.members.length})</div>
+                    <div className="grid gap-1 mb-3">
+                      {r.members.map((m) => (
+                        <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
+                          <span className="font-black text-[var(--foreground)] min-w-0 truncate">{m.name}</span>
+                          <span className="text-[var(--text-secondary)] truncate">{m.role || '—'}</span>
+                          {m.employmentType && m.employmentType !== 'Full-Time' && (
+                            <span className="ml-auto shrink-0 bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-amber-700">{m.employmentType}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {/* Open roles */}
+                    {r.openTitles.length > 0 && (
+                      <>
+                        <div className="mb-2 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Open Roles ({r.openTitles.length})</div>
+                        <div className="grid gap-1">
+                          {r.openTitles.map((title, i) => (
+                            <div key={i} className="flex items-center gap-2 text-[11px] font-mono text-[var(--text-secondary)]">
+                              <span className="text-[var(--border-light)]">○</span>
+                              {title}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
