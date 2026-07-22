@@ -191,8 +191,6 @@ export default function HeadcountPlannerPage() {
                   const overdue = days !== null && days > PROBATION_REVIEW_DAYS.end;
                   const reviewDue = days !== null && days >= PROBATION_REVIEW_DAYS.start && days <= PROBATION_REVIEW_DAYS.end;
                   const pct = days !== null ? Math.min(100, Math.round((days / PROBATION_REVIEW_DAYS.end) * 100)) : 0;
-                  const planned = intern.plannedConversionDate ? new Date(intern.plannedConversionDate) : null;
-                  const plannedDays = planned ? Math.ceil((planned.getTime() - now) / (1000 * 60 * 60 * 24)) : null;
                   return (
                     <label key={intern.id}
                       className={`block cursor-pointer px-4 py-2.5 transition-colors hover:bg-[var(--background)] ${checked ? 'bg-[var(--background)]' : ''}`}>
@@ -202,25 +200,17 @@ export default function HeadcountPlannerPage() {
                         <span className="text-[11px] font-black text-[var(--foreground)] min-w-0 truncate">{intern.name}</span>
                         <span className="text-[10px] text-[var(--text-secondary)] shrink-0">{intern.team}</span>
                         <div className="ml-auto flex items-center gap-2 shrink-0">
-                          {intern.plannedConversionDate && <span className="text-[10px] font-black text-[var(--foreground)]">{new Date(intern.plannedConversionDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}</span>}
                           {overdue && <span className="bg-red-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-red-700">Overdue</span>}
                           {reviewDue && <span className="bg-[#EAEAEA] px-1.5 py-0.5 text-[8px] font-black uppercase text-[#81858C]">Review</span>}
                         </div>
                       </div>
-                      {/* Progress bar + dates row */}
-                      <div className="mt-1.5 ml-[26px] flex items-center gap-3">
-                        <div className="flex-1 flex items-center gap-2">
-                          <div className="h-1.5 flex-1 bg-[#EAEAEA] overflow-hidden">
-                            <div className={`h-full transition-all ${overdue ? 'bg-[#FD0009]' : reviewDue ? 'bg-[#272727]' : 'bg-[#81858C]'}`} style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="text-[9px] font-mono text-[var(--text-secondary)] shrink-0 w-[32px] text-right">{days ?? 0}/{PROBATION_REVIEW_DAYS.end}d</span>
+                      {/* Progress bar row */}
+                      <div className="mt-1.5 ml-[26px] flex items-center gap-2">
+                        <div className="h-1.5 flex-1 bg-[#EAEAEA] overflow-hidden">
+                          <div className={`h-full transition-all ${overdue ? 'bg-[#FD0009]' : reviewDue ? 'bg-[#272727]' : 'bg-[#81858C]'}`} style={{ width: `${pct}%` }} />
                         </div>
-                        {planned && (
-                          <span className="text-[9px] font-mono text-[#FF6621] shrink-0">
-                            {planned.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
-                            {plannedDays !== null && <span className="text-[var(--text-secondary)]"> ({plannedDays > 0 ? `in ${plannedDays}d` : plannedDays === 0 ? 'today' : `${Math.abs(plannedDays)}d ago`})</span>}
-                          </span>
-                        )}
+                        <span className="text-[9px] font-mono text-[var(--text-secondary)] shrink-0">{days ?? 0}/{PROBATION_REVIEW_DAYS.end}d</span>
+                        {intern.plannedConversionDate && <span className="text-[10px] font-black text-[var(--foreground)] shrink-0">{new Date(intern.plannedConversionDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}</span>}
                       </div>
                     </label>
                   );
