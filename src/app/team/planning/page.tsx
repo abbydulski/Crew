@@ -105,12 +105,12 @@ export default function HeadcountPlannerPage() {
           <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Employment Mix</div>
           <div className="flex h-5 w-full overflow-hidden border border-[var(--border-light)]">
             <div className="h-full bg-[var(--foreground)] transition-all" style={{ width: `${ftPct}%` }} title={`Full-Time: ${scenario.ft}`} />
-            <div className="h-full bg-amber-400 transition-all" style={{ width: `${internPct}%` }} title={`Intern: ${scenario.intern}`} />
+            <div className="h-full bg-violet-400 transition-all" style={{ width: `${internPct}%` }} title={`Intern: ${scenario.intern}`} />
             {scenario.other > 0 && <div className="h-full bg-[var(--border-light)] transition-all" style={{ width: `${100 - ftPct - internPct}%` }} title={`Other: ${scenario.other}`} />}
           </div>
           <div className="mt-2 flex flex-wrap gap-4 text-[9px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
             <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-[var(--foreground)]" /> FT {scenario.ft}</span>
-            <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-amber-400" /> Intern {scenario.intern}</span>
+            <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-violet-400" /> Intern {scenario.intern}</span>
             {scenario.other > 0 && <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-[var(--border-light)]" /> Other {scenario.other}</span>}
             {scenario.incoming > 0 && <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-emerald-400" /> Incoming {scenario.incoming}</span>}
             {scenario.converting > 0 && <span className="ml-auto text-[var(--foreground)] font-black">+{scenario.converting} converting to FT</span>}
@@ -194,7 +194,7 @@ export default function HeadcountPlannerPage() {
                       <div className="ml-auto flex items-center gap-2 shrink-0">
                         {days !== null && <span className="text-[10px] font-mono text-[var(--text-secondary)]">{days}d</span>}
                         {overdue && <span className="bg-red-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-red-700">Overdue</span>}
-                        {reviewDue && <span className="bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-amber-700">Review</span>}
+                        {reviewDue && <span className="bg-violet-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-violet-700">Review</span>}
                       </div>
                     </label>
                   );
@@ -218,7 +218,11 @@ export default function HeadcountPlannerPage() {
             <div className="text-right">Totals</div>
           </div>
           {rows.map((r) => {
-            const filledPct = (r.filled / maxProjected) * 100;
+            const active = r.members.filter((m) => !m.incoming);
+            const teamFt = active.filter((m) => (m.employmentType === 'Full-Time' || !m.employmentType) || (m.employmentType === 'Intern' && convertIds.has(m.id))).length;
+            const teamIntern = active.filter((m) => m.employmentType === 'Intern' && !convertIds.has(m.id)).length;
+            const ftPctBar = (teamFt / maxProjected) * 100;
+            const internPctBar = (teamIntern / maxProjected) * 100;
             const openPct = (r.open / maxProjected) * 100;
             const incomingPct = (r.incoming / maxProjected) * 100;
             const isExpanded = expandedTeam === r.team;
@@ -232,14 +236,16 @@ export default function HeadcountPlannerPage() {
                   </div>
                   <div>
                     <div className="flex h-6 w-full border border-[var(--border-light)] bg-[var(--background)]" title={r.openTitles.length ? `Open: ${r.openTitles.join(', ')}` : undefined}>
-                      <div className="h-full bg-[var(--foreground)]" style={{ width: `${filledPct}%` }} />
+                      <div className="h-full bg-[var(--foreground)]" style={{ width: `${ftPctBar}%` }} title={`FT: ${teamFt}`} />
+                      {internPctBar > 0 && <div className="h-full bg-violet-400" style={{ width: `${internPctBar}%` }} title={`Intern: ${teamIntern}`} />}
                       {incomingPct > 0 && <div className="h-full bg-emerald-400" style={{ width: `${incomingPct}%` }} title={`Incoming: ${r.incoming}`} />}
                       <div className="h-full border-l border-[var(--background)] bg-[var(--foreground)] opacity-30" style={{ width: `${openPct}%` }} />
                     </div>
                   </div>
                   <div className="text-right">
                     <div>
-                      <span className="font-black text-[var(--foreground)]">{r.filled}</span>
+                      <span className="font-black text-[var(--foreground)]">{teamFt} FT</span>
+                      {teamIntern > 0 && <span className="text-violet-600"> · {teamIntern} Intern</span>}
                       {r.incoming > 0 && <span className="text-emerald-600"> +{r.incoming} incoming</span>}
                       <span className="text-[var(--text-secondary)]"> +{r.open} open</span>
                     </div>
@@ -261,7 +267,7 @@ export default function HeadcountPlannerPage() {
                       <div className="mb-3">
                         <div className="flex h-3 w-full overflow-hidden border border-[var(--border-light)]">
                           <div className="h-full bg-[var(--foreground)] transition-all" style={{ width: `${teamFtPct}%` }} />
-                          <div className="h-full bg-amber-400 transition-all" style={{ width: `${teamInternPct}%` }} />
+                          <div className="h-full bg-violet-400 transition-all" style={{ width: `${teamInternPct}%` }} />
                           {otherMembers.length > 0 && <div className="h-full bg-[var(--border-light)] transition-all" style={{ width: `${100 - teamFtPct - teamInternPct}%` }} />}
                         </div>
                         <div className="mt-1 flex gap-3 text-[8px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
@@ -291,13 +297,13 @@ export default function HeadcountPlannerPage() {
                     {/* Interns */}
                     {internMembers.length > 0 && (
                       <>
-                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-amber-700">Interns ({internMembers.length})</div>
+                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-violet-700">Interns ({internMembers.length})</div>
                         <div className="grid gap-1 mb-3">
                           {internMembers.map((m) => (
                             <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
                               <span className="font-black text-[var(--foreground)] min-w-0 truncate">{m.name}</span>
                               <span className="text-[var(--text-secondary)] truncate">{m.role || '\u2014'}</span>
-                              <span className="ml-auto shrink-0 bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-amber-700">Intern</span>
+                              <span className="ml-auto shrink-0 bg-violet-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-violet-700">Intern</span>
                             </div>
                           ))}
                         </div>
