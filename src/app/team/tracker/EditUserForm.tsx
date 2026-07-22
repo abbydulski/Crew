@@ -158,8 +158,9 @@ export default function EditUserForm({ user, onSaved, managerOptions }: Props) {
         </div>
       )}
 
-      <div className="border border-[#FF4A78]/30 bg-[#FF4A78]/5 p-3">
-        <p className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#FF4A78]">Departure (moves to Alumni)</p>
+      <div className="border-t-2 border-t-[var(--foreground)] border border-[var(--border-light)] bg-[var(--background)] p-3">
+        <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground)]">Departure</p>
+        <p className="mb-2 text-[9px] text-[var(--text-secondary)]">Sets an end date — moves this person to Alumni.</p>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className={labelClass}>End date</label>

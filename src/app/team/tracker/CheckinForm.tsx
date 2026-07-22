@@ -35,7 +35,7 @@ export default function CheckinForm({ userId, onLogged }: Props) {
   };
 
   return (
-    <div className="space-y-2 border border-[#00B0FF]/30 bg-[#00B0FF]/5 p-3">
+    <div className="space-y-2 border-t-2 border-t-[var(--foreground)] border border-[var(--border-light)] bg-[var(--background)] p-3">
       <div className="flex flex-wrap gap-1">
         {TYPES.map((t) => {
           const active = type === t;
