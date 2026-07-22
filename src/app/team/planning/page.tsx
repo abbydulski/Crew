@@ -6,17 +6,20 @@ import PageLoading from '@/components/PageLoading';
 import { PROBATION_REVIEW_DAYS } from '../tracker/types';
 
 /* ── Types ── */
-interface TeamMember { id: string; name: string; role: string | null; employmentType: string | null }
-interface TeamRow { team: string; filled: number; open: number; projected: number; openTitles: string[]; members: TeamMember[] }
+interface TeamMember { id: string; name: string; role: string | null; employmentType: string | null; incoming?: boolean }
+interface TeamRow { team: string; filled: number; open: number; incoming: number; projected: number; openTitles: string[]; members: TeamMember[] }
 interface Intern { id: string; name: string; team: string; startDate: string | null; daysSinceStart: number | null; plannedConversionDate: string | null }
-interface Totals { filled: number; open: number; projected: number; ftCount: number; internCount: number; otherCount: number }
+interface IncomingHire { id: string; name: string; team: string; role: string | null; employmentType: string | null; startDate: string | null }
+interface Totals { filled: number; open: number; incoming: number; projected: number; ftCount: number; internCount: number; otherCount: number }
 
 export default function HeadcountPlannerPage() {
   const [rows, setRows] = useState<TeamRow[]>([]);
-  const [totals, setTotals] = useState<Totals>({ filled: 0, open: 0, projected: 0, ftCount: 0, internCount: 0, otherCount: 0 });
+  const [totals, setTotals] = useState<Totals>({ filled: 0, open: 0, incoming: 0, projected: 0, ftCount: 0, internCount: 0, otherCount: 0 });
   const [interns, setInterns] = useState<Intern[]>([]);
+  const [incomingHires, setIncomingHires] = useState<IncomingHire[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [now] = useState(() => Date.now());
 
   // Scenario: which interns to convert
   const [convertIds, setConvertIds] = useState<Set<string>>(new Set());
@@ -32,6 +35,7 @@ export default function HeadcountPlannerPage() {
         setRows(data.data.teams);
         setTotals(data.data.totals);
         setInterns(data.data.interns || []);
+        setIncomingHires(data.data.incoming || []);
       } else setError(data.error || 'Failed to load');
     } catch { setError('Failed to load'); }
   }, []);
@@ -51,6 +55,7 @@ export default function HeadcountPlannerPage() {
       intern: totals.internCount - converting,
       other: totals.otherCount,
       open: totals.open,
+      incoming: totals.incoming,
       projected: totals.projected,
       converting,
     };
@@ -77,13 +82,14 @@ export default function HeadcountPlannerPage() {
       </div>
 
       {/* Summary tiles */}
-      <div className="mb-6 grid grid-cols-5 gap-3">
+      <div className="mb-6 grid grid-cols-3 gap-3 sm:grid-cols-6">
         {[
           { label: 'Headcount', value: scenario.filled, sub: 'active' },
           { label: 'Full-Time', value: scenario.ft, sub: `${ftPct}%` },
           { label: 'Interns', value: scenario.intern, sub: `${internPct}%` },
+          { label: 'Incoming', value: scenario.incoming, sub: 'hired / onboarding' },
           { label: 'Open Roles', value: scenario.open, sub: 'to hire' },
-          { label: 'Projected', value: scenario.projected, sub: `if all filled` },
+          { label: 'Projected', value: scenario.filled + scenario.incoming + scenario.open, sub: 'all filled + incoming' },
         ].map((f) => (
           <div key={f.label} className="border border-[var(--border)] bg-[var(--card-background)] px-4 py-3">
             <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">{f.label}</div>
@@ -102,16 +108,46 @@ export default function HeadcountPlannerPage() {
             <div className="h-full bg-amber-400 transition-all" style={{ width: `${internPct}%` }} title={`Intern: ${scenario.intern}`} />
             {scenario.other > 0 && <div className="h-full bg-[var(--border-light)] transition-all" style={{ width: `${100 - ftPct - internPct}%` }} title={`Other: ${scenario.other}`} />}
           </div>
-          <div className="mt-2 flex gap-4 text-[9px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
+          <div className="mt-2 flex flex-wrap gap-4 text-[9px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
             <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-[var(--foreground)]" /> FT {scenario.ft}</span>
             <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-amber-400" /> Intern {scenario.intern}</span>
             {scenario.other > 0 && <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-[var(--border-light)]" /> Other {scenario.other}</span>}
+            {scenario.incoming > 0 && <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 bg-emerald-400" /> Incoming {scenario.incoming}</span>}
             {scenario.converting > 0 && <span className="ml-auto text-[var(--foreground)] font-black">+{scenario.converting} converting to FT</span>}
           </div>
         </div>
       )}
 
       {error && <p className="mb-3 text-xs text-red-700">{error}</p>}
+
+      {/* Incoming hires banner */}
+      {incomingHires.length > 0 && (
+        <div className="mb-6 border border-emerald-300 bg-emerald-50 p-4">
+          <h3 className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-emerald-800">
+            Incoming Hires ({incomingHires.length})
+          </h3>
+          <div className="grid gap-1">
+            {incomingHires.map((h) => {
+              const startDate = h.startDate ? new Date(h.startDate) : null;
+              const daysUntil = startDate ? Math.ceil((startDate.getTime() - now) / (1000 * 60 * 60 * 24)) : null;
+              return (
+                <div key={h.id} className="flex items-center gap-3 text-[11px] font-mono">
+                  <span className="font-black text-emerald-900">{h.name}</span>
+                  <span className="text-emerald-700">{h.team}</span>
+                  <span className="text-emerald-600">{h.role || '—'}</span>
+                  {h.employmentType && <span className="text-[9px] uppercase text-emerald-600">{h.employmentType}</span>}
+                  {startDate && (
+                    <span className="ml-auto text-emerald-700 font-black">
+                      {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
+                      {daysUntil !== null && <span className="ml-1 font-normal text-emerald-600">({daysUntil > 0 ? `in ${daysUntil}d` : daysUntil === 0 ? 'today' : `${Math.abs(daysUntil)}d ago`})</span>}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Collapsible intern conversion panel */}
       {interns.length > 0 && (
@@ -184,6 +220,7 @@ export default function HeadcountPlannerPage() {
           {rows.map((r) => {
             const filledPct = (r.filled / maxProjected) * 100;
             const openPct = (r.open / maxProjected) * 100;
+            const incomingPct = (r.incoming / maxProjected) * 100;
             const isExpanded = expandedTeam === r.team;
             return (
               <div key={r.team}>
@@ -196,19 +233,24 @@ export default function HeadcountPlannerPage() {
                   <div>
                     <div className="flex h-6 w-full border border-[var(--border-light)] bg-[var(--background)]" title={r.openTitles.length ? `Open: ${r.openTitles.join(', ')}` : undefined}>
                       <div className="h-full bg-[var(--foreground)]" style={{ width: `${filledPct}%` }} />
+                      {incomingPct > 0 && <div className="h-full bg-emerald-400" style={{ width: `${incomingPct}%` }} title={`Incoming: ${r.incoming}`} />}
                       <div className="h-full border-l border-[var(--background)] bg-[var(--foreground)] opacity-30" style={{ width: `${openPct}%` }} />
                     </div>
                   </div>
                   <div className="text-right">
-                    <div><span className="font-black text-[var(--foreground)]">{r.filled}</span> <span className="text-[var(--text-secondary)]">+ {r.open} open</span></div>
+                    <div>
+                      <span className="font-black text-[var(--foreground)]">{r.filled}</span>
+                      {r.incoming > 0 && <span className="text-emerald-600"> +{r.incoming} incoming</span>}
+                      <span className="text-[var(--text-secondary)]"> +{r.open} open</span>
+                    </div>
                   </div>
                 </button>
                 {isExpanded && (
                   <div className="border-t border-[var(--border-light)] bg-[var(--background)] px-4 py-3">
-                    {/* Members */}
-                    <div className="mb-2 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">People ({r.members.length})</div>
+                    {/* Active members */}
+                    <div className="mb-2 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">People ({r.members.filter((m) => !m.incoming).length})</div>
                     <div className="grid gap-1 mb-3">
-                      {r.members.map((m) => (
+                      {r.members.filter((m) => !m.incoming).map((m) => (
                         <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
                           <span className="font-black text-[var(--foreground)] min-w-0 truncate">{m.name}</span>
                           <span className="text-[var(--text-secondary)] truncate">{m.role || '—'}</span>
@@ -218,6 +260,23 @@ export default function HeadcountPlannerPage() {
                         </div>
                       ))}
                     </div>
+                    {/* Incoming hires for this team */}
+                    {r.members.some((m) => m.incoming) && (
+                      <>
+                        <div className="mb-2 text-[8px] font-black uppercase tracking-[0.2em] text-emerald-700">Incoming ({r.members.filter((m) => m.incoming).length})</div>
+                        <div className="grid gap-1 mb-3">
+                          {r.members.filter((m) => m.incoming).map((m) => (
+                            <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
+                              <span className="font-black text-emerald-800 min-w-0 truncate">{m.name}</span>
+                              <span className="text-emerald-600 truncate">{m.role || '—'}</span>
+                              {m.employmentType && (
+                                <span className="ml-auto shrink-0 bg-emerald-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-emerald-700">{m.employmentType}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                     {/* Open roles */}
                     {r.openTitles.length > 0 && (
                       <>
