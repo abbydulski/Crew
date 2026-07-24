@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import type { Role, TeamMember } from './page';
 
-const TEAM_OPTIONS = ['HW', 'SW', 'Field', 'Ops'];
-import { OFFICE_OPTIONS, EMPLOYMENT_TYPE_OPTIONS } from '@/lib/constants';
+import { OFFICE_OPTIONS, EMPLOYMENT_TYPE_OPTIONS, TEAM_OPTIONS } from '@/lib/constants';
 
 export default function RoleModal({ role, team, onClose, onSaved }: {
   role: Role | null;
@@ -79,7 +78,7 @@ export default function RoleModal({ role, team, onClose, onSaved }: {
               <select value={teamValue} onChange={(e) => setTeamValue(e.target.value)}
                 className="w-full border border-[var(--border)] px-3 py-2 text-sm">
                 <option value="">Select...</option>
-                {TEAM_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                {TEAM_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
             <div>
