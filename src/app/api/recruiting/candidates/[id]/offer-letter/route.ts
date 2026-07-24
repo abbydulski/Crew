@@ -10,11 +10,11 @@ const OFFICE_ADDRESSES: Record<string, string> = {
 };
 
 const TEMPLATE_IDS: Record<string, string> = {
-  CA: '1Bv4SEqfTp1KwmWvl4MHOoqQBWslKxwzbybQDfSmASXc',
-  NV: '1nzuCrKOLSj0OucebMvZbRPU8CmOneZmOXD5Hvrdq5yU',
+  CA: process.env.OFFER_TEMPLATE_CA || '',
+  NV: process.env.OFFER_TEMPLATE_NV || '',
 };
 
-const DRIVE_FOLDER_ID = '1jyDP7tXhYQo-odiDrYxmtii6mwGPPenl';
+const DRIVE_FOLDER_ID = process.env.OFFER_DRIVE_FOLDER_ID || '';
 
 function getTemplateId(office: string): string {
   if (office === 'Vegas') return TEMPLATE_IDS.NV;

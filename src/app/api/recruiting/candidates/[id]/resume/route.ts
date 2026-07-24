@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth';
  * Google Drive folder for candidate resumes.
  * Falls back to the same folder used for offer letters if not set.
  */
-const RESUME_FOLDER_ID = process.env.RESUME_DRIVE_FOLDER_ID || '1jyDP7tXhYQo-odiDrYxmtii6mwGPPenl';
+const RESUME_FOLDER_ID = process.env.RESUME_DRIVE_FOLDER_ID || process.env.OFFER_DRIVE_FOLDER_ID || '';
 
 /** POST /api/recruiting/candidates/[id]/resume — upload a resume file to Google Drive */
 export async function POST(
