@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import PersonPicker from '@/components/PersonPicker';
+import { OFFICE_OPTIONS, EMPLOYMENT_TYPE_OPTIONS, TEAM_OPTIONS } from '@/lib/constants';
 
 interface Approver { email: string; name: string }
 
@@ -57,10 +58,7 @@ export default function OfferFormFields({ startDate, setStartDate, salary, setSa
           <select value={team} onChange={e => setTeam(e.target.value)}
             className="w-full border border-[var(--border)] px-3 py-2 text-sm">
             <option value="">Select team...</option>
-            <option value="HW">HW</option>
-            <option value="SW">SW</option>
-            <option value="Field">Field</option>
-            <option value="Ops">Ops</option>
+            {TEAM_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
         <div>
@@ -68,9 +66,7 @@ export default function OfferFormFields({ startDate, setStartDate, salary, setSa
           <select value={employmentType} onChange={e => setEmploymentType(e.target.value)}
             className="w-full border border-[var(--border)] px-3 py-2 text-sm">
             <option value="">Select type...</option>
-            <option value="Full-Time">Full-Time</option>
-            <option value="Part-Time">Part-Time</option>
-            <option value="Intern">Intern</option>
+            {EMPLOYMENT_TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
       </div>
@@ -112,9 +108,7 @@ export default function OfferFormFields({ startDate, setStartDate, salary, setSa
           <select value={officeLocation} onChange={e => setOfficeLocation(e.target.value)}
             className="w-full border border-[var(--border)] px-3 py-2 text-sm">
             <option value="">Select office...</option>
-            <option value="LB">Long Beach</option>
-            <option value="Vegas">Las Vegas</option>
-            <option value="Norcal">Northern California</option>
+            {OFFICE_OPTIONS.filter(o => o.value !== 'Remote').map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
         <div>

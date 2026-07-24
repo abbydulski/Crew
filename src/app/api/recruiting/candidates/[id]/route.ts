@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { ensureDeelEmailTicket, notifyTicketSlack, notifyConversionSlack } from '@/lib/onboarding-tickets';
+import { OFFICE_NAMES } from '@/lib/constants';
 
 /** PATCH /api/recruiting/candidates/[id] — update a candidate */
 export async function PATCH(
@@ -139,7 +140,6 @@ async function sendHiredSlackNotification(
   const webhookUrl = process.env.SLACK_RECRUITING_WEBHOOK_URL;
   if (!webhookUrl) return;
 
-  const OFFICE_NAMES: Record<string, string> = { LB: 'Long Beach', Vegas: 'Las Vegas', Norcal: 'Northern California' };
   const position = role || 'a new position';
   const office = officeLocation ? (OFFICE_NAMES[officeLocation] || officeLocation) : 'TBD';
   const start = startDate

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { resolvePersonName } from '@/components/PersonPicker';
 import PageLoading from '@/components/PageLoading';
+import { OFFICE_NAMES } from '@/lib/constants';
 
 interface Task {
   key: string;
@@ -44,7 +45,6 @@ interface TeamMember {
   name: string;
 }
 
-const OFFICE_NAMES: Record<string, string> = { LB: 'Long Beach', Vegas: 'Las Vegas', Norcal: 'NorCal' };
 
 type Stage = 'QUEUE' | 'THREE_WEEKS' | 'ONE_WEEK' | 'STARTED';
 

@@ -3,18 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-auth';
-
-/** Common short codes → canonical team labels (matches tracker TEAM_OPTIONS). */
-const TEAM_ALIASES: Record<string, string> = {
-  hw: 'Hardware',
-  hardware: 'Hardware',
-  sw: 'Software',
-  software: 'Software',
-  field: 'Field',
-  ops: 'BizOps',
-  bizops: 'BizOps',
-  'biz ops': 'BizOps',
-};
+import { TEAM_ALIASES } from '@/lib/constants';
 
 function normalizeTeam(raw: string | null | undefined): string {
   if (!raw) return 'Unassigned';

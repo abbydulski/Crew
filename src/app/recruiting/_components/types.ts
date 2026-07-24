@@ -39,16 +39,5 @@ export interface Candidate {
   resumeWebViewLink: string | null;
 }
 
-export const PIPELINE_STATUSES = [
-  { key: 'REACHED_OUT', label: 'Reached Out' },
-  { key: 'IN_DIALOGUE', label: 'In Dialogue' },
-  { key: 'INTERVIEW', label: 'Interview' },
-  { key: 'OFFER', label: 'Offer' },
-] as const;
-
-export const ALL_STATUSES = [
-  ...PIPELINE_STATUSES,
-  { key: 'HIRED', label: 'Hired' },
-  { key: 'ON_ICE', label: 'On Ice' },
-  { key: 'ARCHIVED', label: 'Archived' },
-] as const;
+// Re-export from shared constants so existing imports keep working
+export { PIPELINE_STATUSES, ALL_STATUSES } from '@/lib/constants';

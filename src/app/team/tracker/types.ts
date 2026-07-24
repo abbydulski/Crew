@@ -1,4 +1,15 @@
-export type CheckinType = 'CHECK_IN' | 'PROMOTION' | 'NOTE';
+// Re-export shared constants so existing imports from './types' keep working
+export {
+  type CheckinType,
+  CHECKIN_TYPE_LABEL,
+  OFFICE_OPTIONS,
+  TEAM_OPTIONS,
+  EMPLOYMENT_TYPE_OPTIONS,
+  PROBATION_REVIEW_DAYS,
+} from '@/lib/constants';
+
+import type { CheckinType } from '@/lib/constants';
+import { PROBATION_REVIEW_DAYS } from '@/lib/constants';
 
 export interface TrackerCheckin {
   id: string;
@@ -29,37 +40,6 @@ export interface TrackerUser {
   createdAt: string;
   lastLogin: string;
 }
-
-export const CHECKIN_TYPE_LABEL: Record<CheckinType, string> = {
-  CHECK_IN: 'Check-in',
-  PROMOTION: 'Promotion',
-  NOTE: 'Note',
-};
-
-/** Office locations — Recruiting set plus Remote for post-hire flexibility. */
-export const OFFICE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'LB', label: 'Long Beach' },
-  { value: 'Vegas', label: 'Las Vegas' },
-  { value: 'Norcal', label: 'NorCal' },
-  { value: 'Remote', label: 'Remote' },
-];
-
-export const TEAM_OPTIONS: { value: string; label: string }[] = [
-  { value: 'BizOps', label: 'BizOps' },
-  { value: 'Hardware', label: 'Hardware' },
-  { value: 'Software', label: 'Software' },
-  { value: 'Field', label: 'Field' },
-];
-
-/** Employment types — mirrors the Recruiting offer form. */
-export const EMPLOYMENT_TYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'Full-Time', label: 'Full-Time' },
-  { value: 'Part-Time', label: 'Part-Time' },
-  { value: 'Intern', label: 'Intern' },
-];
-
-/** Hourly probation review window: 3 weeks before the 3-month mark. */
-export const PROBATION_REVIEW_DAYS = { start: 69, end: 90 } as const;
 
 /** Returns "1 yr 3 mo" / "4 mo" / "—" — short, readable tenure. */
 export function formatTenure(startIso: string | null): string {

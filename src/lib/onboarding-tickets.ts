@@ -1,6 +1,7 @@
 import type { OnboardingTicketType } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
+import { OFFICE_NAMES } from '@/lib/constants';
 
 export interface TicketTypeConfig {
   type: OnboardingTicketType;
@@ -143,7 +144,6 @@ interface TicketForSlack {
   assigneeEmail: string | null;
 }
 
-const OFFICE_NAMES: Record<string, string> = { LB: 'Long Beach', Vegas: 'Las Vegas', Norcal: 'Northern California' };
 
 export async function notifyTicketSlack(ticket: TicketForSlack, hire: HireForSlack) {
   const cfg = getTicketConfig(ticket.type);

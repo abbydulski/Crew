@@ -18,7 +18,7 @@ export interface Role {
 
 export interface TeamMember { email: string; name: string; image?: string | null }
 
-const OFFICE_NAMES: Record<string, string> = { LB: 'Long Beach', Vegas: 'Las Vegas', Norcal: 'NorCal' };
+import { OFFICE_NAMES } from '@/lib/constants';
 const TEAM_ORDER = ['HW', 'SW', 'Field', 'Ops'];
 
 export default function OpenRolesPage() {

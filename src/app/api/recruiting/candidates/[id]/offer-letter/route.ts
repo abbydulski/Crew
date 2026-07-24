@@ -2,12 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-
-const OFFICE_ADDRESSES: Record<string, string> = {
-  LB: '2799 Temple Ave, Signal Hill, CA 90755',
-  Vegas: '1610 N Woodchips Rd, Pahrump, NV 89060',
-  Norcal: '755 Paige Mill Road, Palo Alto, CA 94304',
-};
+import { OFFICE_ADDRESSES } from '@/lib/constants';
 
 const TEMPLATE_IDS: Record<string, string> = {
   CA: process.env.OFFER_TEMPLATE_CA || '',
