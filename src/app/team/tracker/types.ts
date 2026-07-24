@@ -1,13 +1,3 @@
-// Re-export shared constants so existing imports from './types' keep working
-export {
-  type CheckinType,
-  CHECKIN_TYPE_LABEL,
-  OFFICE_OPTIONS,
-  TEAM_OPTIONS,
-  EMPLOYMENT_TYPE_OPTIONS,
-  PROBATION_REVIEW_DAYS,
-} from '@/lib/constants';
-
 import type { CheckinType } from '@/lib/constants';
 import { PROBATION_REVIEW_DAYS } from '@/lib/constants';
 

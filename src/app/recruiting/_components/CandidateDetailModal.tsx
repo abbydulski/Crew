@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Candidate } from './types';
-import { ALL_STATUSES } from './types';
+import { ALL_STATUSES } from '@/lib/constants';
 
 interface Approver { email: string; name: string }
 

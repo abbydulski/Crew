@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { EMPLOYMENT_TYPE_OPTIONS, OFFICE_OPTIONS, TEAM_OPTIONS } from './types';
+import { EMPLOYMENT_TYPE_OPTIONS, OFFICE_OPTIONS, TEAM_OPTIONS } from '@/lib/constants';
 
 interface Props {
   onCreated: () => Promise<void>;

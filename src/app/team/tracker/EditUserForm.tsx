@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { EMPLOYMENT_TYPE_OPTIONS, OFFICE_OPTIONS, TEAM_OPTIONS, TrackerUser } from './types';
+import { EMPLOYMENT_TYPE_OPTIONS, OFFICE_OPTIONS, TEAM_OPTIONS } from '@/lib/constants';
+import type { TrackerUser } from './types';
 
 interface Props {
   user: TrackerUser;

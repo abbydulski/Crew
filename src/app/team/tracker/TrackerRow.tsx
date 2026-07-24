@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CHECKIN_TYPE_LABEL, CheckinType, TrackerCheckin, TrackerUser, isReviewDue, isInternOverdue } from './types';
+import { CHECKIN_TYPE_LABEL, type CheckinType } from '@/lib/constants';
+import { type TrackerCheckin, type TrackerUser, isReviewDue, isInternOverdue } from './types';
 import EditUserForm from './EditUserForm';
 import CheckinForm from './CheckinForm';
 
@@ -116,7 +117,7 @@ export default function TrackerRow({ user: u, expanded, onToggle, onChanged, for
             <EditUserForm user={u} onSaved={onChanged} managerOptions={managerOptions} />
           </div>
           <div>
-            <h4 className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground)]">Log event</h4>
+            <h4 className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Log event</h4>
             <CheckinForm userId={u.id} onLogged={async () => { await loadHistory(); await onChanged(); }} />
 
             <h4 className="mt-6 mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">History ({u.checkinCount})</h4>

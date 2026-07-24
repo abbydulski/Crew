@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageLoading from '@/components/PageLoading';
-import { PROBATION_REVIEW_DAYS } from '../tracker/types';
+import { PROBATION_REVIEW_DAYS } from '@/lib/constants';
 
 /* ── Types ── */
 interface TeamMember { id: string; name: string; role: string | null; employmentType: string | null; incoming?: boolean }

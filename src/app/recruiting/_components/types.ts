@@ -39,5 +39,3 @@ export interface Candidate {
   resumeWebViewLink: string | null;
 }
 
-// Re-export from shared constants so existing imports keep working
-export { PIPELINE_STATUSES, ALL_STATUSES } from '@/lib/constants';

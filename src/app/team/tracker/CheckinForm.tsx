@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CHECKIN_TYPE_LABEL, CheckinType } from './types';
+import { CHECKIN_TYPE_LABEL, type CheckinType } from '@/lib/constants';
 
 interface Props {
   userId: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import type { Candidate } from './types';
-import { PIPELINE_STATUSES } from './types';
+import { PIPELINE_STATUSES } from '@/lib/constants';
 import CandidateCard from './CandidateCard';
 
 export default function Board({ candidates, dragOverStatus, setDragOverStatus, handleDrop, onClick, onEdit, onDelete, onNewOffer, onCompleteOffer }: {
