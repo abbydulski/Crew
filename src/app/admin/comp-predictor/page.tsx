@@ -11,6 +11,7 @@ interface Benchmark {
 }
 interface PredictResult {
   count: number;
+  experience: { target: number; tolerance: number; matched: number; total: number } | null;
   stats: { min: number; median: number; max: number } | null;
   equity: { count: number; min: number; median: number; max: number } | null;
   points: Benchmark[];
@@ -189,7 +190,7 @@ export default function CompPredictorPage() {
 }
 
 function ResultCard({ result, proposed }: { result: PredictResult; proposed: number | null }) {
-  const { stats, equity, points, placement, internal, count } = result;
+  const { stats, equity, experience, points, placement, internal, count } = result;
   if (!stats || count === 0) return <p className="mt-4 text-[11px] text-[var(--text-secondary)]">No benchmarks submitted for that role yet. Add one below to compare.</p>;
   const lo = Math.min(stats.min, proposed ?? stats.min), hi = Math.max(stats.max, proposed ?? stats.max), span = hi - lo || 1;
   const pos = (v: number) => Math.max(0, Math.min(100, ((v - lo) / span) * 100));
@@ -201,6 +202,13 @@ function ResultCard({ result, proposed }: { result: PredictResult; proposed: num
         {placement && <span className="ml-auto bg-[#7C3AED]/10 px-1.5 py-0.5 text-[9px] font-black uppercase text-[#5B21B6]">{placement.label} · {placement.pctAmong}% below</span>}
       </div>
       {equity && <div className="mt-1 text-[9px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">equity median <span className="font-black text-[var(--foreground)]">{fmt(equity.median)}</span> · min {fmt(equity.min)} · max {fmt(equity.max)} <span className="normal-case">({equity.count} of {count})</span></div>}
+      {experience && (
+        <div className="mt-1 text-[9px] font-mono text-[var(--text-secondary)]">
+          {experience.matched > 0
+            ? <><span className="font-black text-[#5B21B6]">{experience.matched}</span> of {experience.total} within ±{experience.tolerance}y of {experience.target}y experience</>
+            : <>No benchmarks within ±{experience.tolerance}y of {experience.target}y — showing all {experience.total}</>}
+        </div>
+      )}
       <div className="relative mt-3 h-6 w-full border border-[var(--border-light)] bg-[var(--card-background)]">
         <div className="absolute inset-y-0 bg-[#81858C]/15" style={{ left: `${pos(stats.min)}%`, right: `${100 - pos(stats.max)}%` }} />
         {points.map((p) => <div key={p.id} className="absolute inset-y-0 w-px bg-[var(--border-light)]" style={{ left: `${pos(p.salary)}%` }} title={`${p.company || '—'} · ${fmt(p.salary)}`} />)}

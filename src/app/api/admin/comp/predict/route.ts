@@ -41,10 +41,23 @@ export async function POST(request: Request) {
     // optional filters the caller provided.
     const all = await prisma.compBenchmark.findMany();
     const roleLc = role.toLowerCase();
-    const points = all
+    const candidates = all
       .filter((b) => b.role.toLowerCase() === roleLc)
-      .filter((b) => matchOpt(b.team, team) && matchOpt(b.location, location) && matchOpt(b.employmentType, employmentType))
-      .sort((a, b) => a.salary - b.salary);
+      .filter((b) => matchOpt(b.team, team) && matchOpt(b.location, location) && matchOpt(b.employmentType, employmentType));
+
+    // Years-of-experience proximity: when provided, prefer benchmarks within a
+    // tolerance window of the target. Benchmarks with no years value are kept as
+    // neutral matches. Fall back to all candidates when none are close.
+    const YEARS_TOL = 2;
+    let points = candidates;
+    let experience: { target: number; tolerance: number; matched: number; total: number } | null = null;
+    if (yearsExperience !== null) {
+      const near = candidates.filter((b) => b.yearsExperience !== null && Math.abs(b.yearsExperience - yearsExperience) <= YEARS_TOL);
+      const noYears = candidates.filter((b) => b.yearsExperience === null);
+      if (near.length > 0) points = [...near, ...noYears];
+      experience = { target: yearsExperience, tolerance: YEARS_TOL, matched: near.length, total: candidates.length };
+    }
+    points = [...points].sort((a, b) => a.salary - b.salary);
 
     const salaries = points.map((p) => p.salary);
     const stats = salaries.length ? {
@@ -92,6 +105,7 @@ export async function POST(request: Request) {
       data: {
         query: { role, yearsExperience, team, location, employmentType, proposedSalary },
         count: points.length,
+        experience,
         stats,
         equity,
         points,
