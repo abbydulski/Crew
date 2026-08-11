@@ -1,26 +1,29 @@
--- Comp Predictor: market benchmark bands.
--- Admins enter p25/p50/p75 salary (and optional equity) for a role/level/team/
--- location, and the predictor places a proposed number against the band. Run in
--- the Supabase SQL editor. Idempotent — safe to re-run.
+-- Comp Predictor: market benchmark data points.
+-- Each row is one company's salary for a role at a given years-of-experience.
+-- The predictor aggregates points per role to place a proposed salary against
+-- the market. Run in the Supabase SQL editor.
+--
+-- NOTE: this DROPs the table first — safe because it holds only test data so
+-- far. Re-run any time to reset to the current shape.
 
-CREATE TABLE IF NOT EXISTS "CompBenchmark" (
-  "id"             TEXT NOT NULL,
-  "role"           TEXT NOT NULL,
-  "level"          TEXT,
-  "team"           TEXT,
-  "location"       TEXT,
-  "employmentType" TEXT,
-  "currency"       TEXT NOT NULL DEFAULT 'USD',
-  "salaryP25"      DOUBLE PRECISION NOT NULL,
-  "salaryP50"      DOUBLE PRECISION NOT NULL,
-  "salaryP75"      DOUBLE PRECISION NOT NULL,
-  "equityP50"      DOUBLE PRECISION,
-  "source"         TEXT,
-  "notes"          TEXT,
-  "createdAt"      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt"      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+DROP TABLE IF EXISTS "CompBenchmark";
+
+CREATE TABLE "CompBenchmark" (
+  "id"              TEXT NOT NULL,
+  "role"            TEXT NOT NULL,
+  "yearsExperience" DOUBLE PRECISION,
+  "company"         TEXT,
+  "team"            TEXT,
+  "location"        TEXT,
+  "employmentType"  TEXT,
+  "currency"        TEXT NOT NULL DEFAULT 'USD',
+  "salary"          DOUBLE PRECISION NOT NULL,
+  "equity"          DOUBLE PRECISION,
+  "notes"           TEXT,
+  "createdAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "CompBenchmark_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX IF NOT EXISTS "CompBenchmark_role_idx" ON "CompBenchmark" ("role");
-CREATE INDEX IF NOT EXISTS "CompBenchmark_team_idx" ON "CompBenchmark" ("team");
+CREATE INDEX "CompBenchmark_role_idx" ON "CompBenchmark" ("role");
+CREATE INDEX "CompBenchmark_team_idx" ON "CompBenchmark" ("team");

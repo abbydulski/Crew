@@ -11,7 +11,7 @@ export async function GET() {
   if (denial) return denial;
 
   const benchmarks = await prisma.compBenchmark.findMany({
-    orderBy: [{ role: 'asc' }, { level: 'asc' }],
+    orderBy: [{ role: 'asc' }, { yearsExperience: 'asc' }, { salary: 'asc' }],
   });
   return NextResponse.json({ success: true, data: benchmarks });
 }
@@ -29,35 +29,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Role is required' }, { status: 400 });
     }
 
-    const p25 = Number(body.salaryP25);
-    const p50 = Number(body.salaryP50);
-    const p75 = Number(body.salaryP75);
-    if (![p25, p50, p75].every((n) => Number.isFinite(n) && n >= 0)) {
-      return NextResponse.json({ success: false, error: 'p25/p50/p75 must be valid non-negative numbers' }, { status: 400 });
-    }
-    if (!(p25 <= p50 && p50 <= p75)) {
-      return NextResponse.json({ success: false, error: 'Percentiles must satisfy p25 ≤ p50 ≤ p75' }, { status: 400 });
+    const salary = Number(body.salary);
+    if (!Number.isFinite(salary) || salary < 0) {
+      return NextResponse.json({ success: false, error: 'Salary must be a valid non-negative number' }, { status: 400 });
     }
 
-    const equityRaw = body.equityP50;
-    const equityP50 = equityRaw === '' || equityRaw === null || equityRaw === undefined ? null : Number(equityRaw);
-    if (equityP50 !== null && !Number.isFinite(equityP50)) {
+    const optNum = (raw: unknown): number | null =>
+      raw === '' || raw === null || raw === undefined ? null : Number(raw);
+    const yearsExperience = optNum(body.yearsExperience);
+    if (yearsExperience !== null && !Number.isFinite(yearsExperience)) {
+      return NextResponse.json({ success: false, error: 'Years of experience must be a number' }, { status: 400 });
+    }
+    const equity = optNum(body.equity);
+    if (equity !== null && !Number.isFinite(equity)) {
       return NextResponse.json({ success: false, error: 'Equity must be a number' }, { status: 400 });
     }
 
     const created = await prisma.compBenchmark.create({
       data: {
         role,
-        level: body.level?.trim() || null,
+        yearsExperience,
+        company: body.company?.trim() || null,
         team: body.team?.trim() || null,
         location: body.location?.trim() || null,
         employmentType: body.employmentType?.trim() || null,
         currency: body.currency?.trim() || 'USD',
-        salaryP25: p25,
-        salaryP50: p50,
-        salaryP75: p75,
-        equityP50,
-        source: body.source?.trim() || null,
+        salary,
+        equity,
         notes: body.notes?.trim() || null,
       },
     });
