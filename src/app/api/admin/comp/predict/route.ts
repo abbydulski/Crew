@@ -53,6 +53,17 @@ export async function POST(request: Request) {
       max: Math.max(...salaries),
     } : null;
 
+    // Equity aggregated over the points that carry an equity value.
+    const equities = points
+      .map((p) => p.equity)
+      .filter((e): e is number => e !== null && Number.isFinite(e));
+    const equity = equities.length ? {
+      count: equities.length,
+      min: Math.min(...equities),
+      median: median(equities),
+      max: Math.max(...equities),
+    } : null;
+
     // Where the proposed number lands among the data points.
     const placement = stats && proposedSalary !== null ? {
       pctAmong: Math.round((salaries.filter((s) => s < proposedSalary).length / salaries.length) * 100),
@@ -82,6 +93,7 @@ export async function POST(request: Request) {
         query: { role, yearsExperience, team, location, employmentType, proposedSalary },
         count: points.length,
         stats,
+        equity,
         points,
         placement,
         internal,

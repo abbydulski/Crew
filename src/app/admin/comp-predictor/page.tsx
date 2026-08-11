@@ -12,6 +12,7 @@ interface Benchmark {
 interface PredictResult {
   count: number;
   stats: { min: number; median: number; max: number } | null;
+  equity: { count: number; min: number; median: number; max: number } | null;
   points: Benchmark[];
   placement: { pctAmong: number; label: string } | null;
   internal: { count: number; min: number; median: number; max: number } | null;
@@ -188,7 +189,7 @@ export default function CompPredictorPage() {
 }
 
 function ResultCard({ result, proposed }: { result: PredictResult; proposed: number | null }) {
-  const { stats, points, placement, internal, count } = result;
+  const { stats, equity, points, placement, internal, count } = result;
   if (!stats || count === 0) return <p className="mt-4 text-[11px] text-[var(--text-secondary)]">No benchmarks submitted for that role yet. Add one below to compare.</p>;
   const lo = Math.min(stats.min, proposed ?? stats.min), hi = Math.max(stats.max, proposed ?? stats.max), span = hi - lo || 1;
   const pos = (v: number) => Math.max(0, Math.min(100, ((v - lo) / span) * 100));
@@ -199,6 +200,7 @@ function ResultCard({ result, proposed }: { result: PredictResult; proposed: num
         <span className="text-[9px] uppercase tracking-wider text-[var(--text-secondary)]">market median · {count} benchmark{count > 1 ? 's' : ''}</span>
         {placement && <span className="ml-auto bg-[#7C3AED]/10 px-1.5 py-0.5 text-[9px] font-black uppercase text-[#5B21B6]">{placement.label} · {placement.pctAmong}% below</span>}
       </div>
+      {equity && <div className="mt-1 text-[9px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">equity median <span className="font-black text-[var(--foreground)]">{fmt(equity.median)}</span> · min {fmt(equity.min)} · max {fmt(equity.max)} <span className="normal-case">({equity.count} of {count})</span></div>}
       <div className="relative mt-3 h-6 w-full border border-[var(--border-light)] bg-[var(--card-background)]">
         <div className="absolute inset-y-0 bg-[#81858C]/15" style={{ left: `${pos(stats.min)}%`, right: `${100 - pos(stats.max)}%` }} />
         {points.map((p) => <div key={p.id} className="absolute inset-y-0 w-px bg-[var(--border-light)]" style={{ left: `${pos(p.salary)}%` }} title={`${p.company || '—'} · ${fmt(p.salary)}`} />)}
@@ -208,11 +210,15 @@ function ResultCard({ result, proposed }: { result: PredictResult; proposed: num
       <div className="mt-1 flex justify-between text-[8px] font-mono uppercase tracking-wider text-[var(--text-secondary)]"><span>min {fmt(stats.min)}</span><span>median {fmt(stats.median)}</span><span>max {fmt(stats.max)}</span></div>
       <div className="mt-3 grid gap-1">
         {points.map((p) => (
-          <div key={p.id} className="flex items-center gap-3 text-[10px] font-mono">
-            <span className="font-black text-[var(--foreground)]">{p.company || '—'}</span>
-            {p.yearsExperience !== null && <span className="text-[var(--text-secondary)]">{p.yearsExperience}y</span>}
-            {p.team && <span className="text-[var(--text-secondary)]">{p.team}</span>}
-            <span className="ml-auto text-[var(--foreground)]">{fmt(p.salary)}</span>
+          <div key={p.id} className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-3 text-[10px] font-mono">
+              <span className="font-black text-[var(--foreground)]">{p.company || '—'}</span>
+              {p.yearsExperience !== null && <span className="text-[var(--text-secondary)]">{p.yearsExperience}y</span>}
+              {p.team && <span className="text-[var(--text-secondary)]">{p.team}</span>}
+              {p.equity !== null && <span className="text-[var(--text-secondary)]">{fmt(p.equity)} eq</span>}
+              <span className="ml-auto text-[var(--foreground)]">{fmt(p.salary)}</span>
+            </div>
+            {p.notes && <div className="pl-1 text-[9px] italic text-[var(--text-secondary)]">{p.notes}</div>}
           </div>
         ))}
       </div>
