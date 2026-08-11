@@ -300,3 +300,26 @@ model Checkin {
   @@index([userId])
   @@index([loggedAt])
 }
+
+// Comp Predictor — market benchmark bands entered by admins. Used to place a
+// proposed salary against p25/p50/p75 for a role/level/team/location.
+model CompBenchmark {
+  id             String   @id @default(cuid())
+  role           String
+  level          String?
+  team           String?
+  location       String?
+  employmentType String?
+  currency       String   @default("USD")
+  salaryP25      Float
+  salaryP50      Float
+  salaryP75      Float
+  equityP50      Float?
+  source         String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([role])
+  @@index([team])
+}

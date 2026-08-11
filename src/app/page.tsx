@@ -35,6 +35,7 @@ const SECTIONS: Section[] = [
       { href: '/team/tracker', label: 'Team Tracker' },
       { href: '/faq/admin', label: 'FAQ Admin' },
       { href: '/admin/feedback-referrals', label: 'Feedback & Referrals' },
+      { href: '/admin/comp-predictor', label: 'Comp Predictor' },
     ],
   },
 ];
