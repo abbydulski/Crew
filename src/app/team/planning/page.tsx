@@ -70,6 +70,18 @@ export default function HeadcountPlannerPage() {
   const isConverting = useCallback((id: string) => convertIds.has(id) || autoFtIds.has(id), [convertIds, autoFtIds]);
   const convertingCount = useMemo(() => new Set([...convertIds, ...autoFtIds]).size, [convertIds, autoFtIds]);
 
+  // Active interns with a live return offer (GIVEN/ACCEPTED, not yet started) — rendered as "Returning"
+  // in team bars without adding width, since they're already counted in filled headcount.
+  const activeReturningIds = useMemo(
+    () => new Set(incomingConversions.filter((c) => c.currentlyActive).map((c) => c.id)),
+    [incomingConversions],
+  );
+  const returningById = useMemo(() => {
+    const map = new Map<string, IncomingConversion>();
+    incomingConversions.forEach((c) => { if (c.currentlyActive) map.set(c.id, c); });
+    return map;
+  }, [incomingConversions]);
+
   // Scenario-adjusted counts. Active FT conversions shift Intern→FT within current headcount;
   // alumni/returning conversions are future bodies counted only in projected, not the current mix.
   const scenario = useMemo(() => {
@@ -318,13 +330,14 @@ export default function HeadcountPlannerPage() {
           </div>
           {rows.map((r) => {
             const active = r.members.filter((m) => !m.incoming);
-            const teamFt = active.filter((m) => (m.employmentType === 'Full-Time' || !m.employmentType) || (m.employmentType === 'Intern' && isConverting(m.id))).length;
-            const teamIntern = active.filter((m) => m.employmentType === 'Intern' && !isConverting(m.id)).length;
+            const teamReturning = active.filter((m) => activeReturningIds.has(m.id)).length;
+            const teamFt = active.filter((m) => !activeReturningIds.has(m.id) && ((m.employmentType === 'Full-Time' || !m.employmentType) || (m.employmentType === 'Intern' && isConverting(m.id)))).length;
+            const teamIntern = active.filter((m) => !activeReturningIds.has(m.id) && m.employmentType === 'Intern' && !isConverting(m.id)).length;
             const ftPctBar = (teamFt / maxProjected) * 100;
             const internPctBar = (teamIntern / maxProjected) * 100;
             const openPct = (r.open / maxProjected) * 100;
             const incomingPct = (r.incoming / maxProjected) * 100;
-            const conversionPct = (r.incomingConversions / maxProjected) * 100;
+            const conversionPct = ((teamReturning + r.incomingConversions) / maxProjected) * 100;
             const isExpanded = expandedTeam === r.team;
             return (
               <div key={r.team}>
@@ -338,8 +351,8 @@ export default function HeadcountPlannerPage() {
                     <div className="flex h-6 w-full border border-[var(--border-light)] bg-[var(--background)]" title={r.openTitles.length ? `Open: ${r.openTitles.join(', ')}` : undefined}>
                       <div className="h-full bg-[var(--foreground)]" style={{ width: `${ftPctBar}%` }} title={`FT: ${teamFt}`} />
                       {internPctBar > 0 && <div className="h-full bg-[#81858C]" style={{ width: `${internPctBar}%` }} title={`Intern: ${teamIntern}`} />}
+                      {conversionPct > 0 && <div className="h-full bg-[#7C3AED]" style={{ width: `${conversionPct}%` }} title={`Returning: ${teamReturning + r.incomingConversions}`} />}
                       {incomingPct > 0 && <div className="h-full bg-[#00B0FF]" style={{ width: `${incomingPct}%` }} title={`Incoming: ${r.incoming}`} />}
-                      {conversionPct > 0 && <div className="h-full bg-[#7C3AED]" style={{ width: `${conversionPct}%` }} title={`Returning: ${r.incomingConversions}`} />}
                       <div className="h-full border-l border-[var(--background)] bg-[var(--foreground)] opacity-30" style={{ width: `${openPct}%` }} />
                     </div>
                   </div>
@@ -347,21 +360,23 @@ export default function HeadcountPlannerPage() {
                     <div>
                       <span className="font-black text-[var(--foreground)]">{teamFt} FT</span>
                       {teamIntern > 0 && <span className="text-[#81858C]"> · {teamIntern} Intern</span>}
+                      {(teamReturning + r.incomingConversions) > 0 && <span className="text-[#7C3AED]"> · {teamReturning + r.incomingConversions} returning</span>}
                       {r.incoming > 0 && <span className="text-[#00B0FF]"> +{r.incoming} incoming</span>}
-                      {r.incomingConversions > 0 && <span className="text-[#7C3AED]"> +{r.incomingConversions} returning</span>}
                       <span className="text-[var(--text-secondary)]"> +{r.open} open</span>
                     </div>
                   </div>
                 </button>
                 {isExpanded && (() => {
                   const active = r.members.filter((m) => !m.incoming);
-                  const ftMembers = active.filter((m) => (m.employmentType === 'Full-Time' || !m.employmentType) || (m.employmentType === 'Intern' && isConverting(m.id)));
-                  const internMembers = active.filter((m) => m.employmentType === 'Intern' && !isConverting(m.id));
-                  const otherMembers = active.filter((m) => m.employmentType && m.employmentType !== 'Full-Time' && m.employmentType !== 'Intern');
+                  const returningMembers = active.filter((m) => activeReturningIds.has(m.id));
+                  const ftMembers = active.filter((m) => !activeReturningIds.has(m.id) && ((m.employmentType === 'Full-Time' || !m.employmentType) || (m.employmentType === 'Intern' && isConverting(m.id))));
+                  const internMembers = active.filter((m) => !activeReturningIds.has(m.id) && m.employmentType === 'Intern' && !isConverting(m.id));
+                  const otherMembers = active.filter((m) => !activeReturningIds.has(m.id) && m.employmentType && m.employmentType !== 'Full-Time' && m.employmentType !== 'Intern');
                   const incomingMembers = r.members.filter((m) => m.incoming);
                   const teamTotal = active.length;
                   const teamFtPct = teamTotal > 0 ? Math.round((ftMembers.length / teamTotal) * 100) : 0;
                   const teamInternPct = teamTotal > 0 ? Math.round((internMembers.length / teamTotal) * 100) : 0;
+                  const teamReturningPct = teamTotal > 0 ? Math.round((returningMembers.length / teamTotal) * 100) : 0;
                   return (
                   <div className="border-t border-[var(--border-light)] bg-[var(--background)] px-4 py-3">
                     {/* Per-team mix bar */}
@@ -370,11 +385,13 @@ export default function HeadcountPlannerPage() {
                         <div className="flex h-3 w-full overflow-hidden border border-[var(--border-light)]">
                           <div className="h-full bg-[var(--foreground)] transition-all" style={{ width: `${teamFtPct}%` }} />
                           <div className="h-full bg-[#81858C] transition-all" style={{ width: `${teamInternPct}%` }} />
-                          {otherMembers.length > 0 && <div className="h-full bg-[var(--border-light)] transition-all" style={{ width: `${100 - teamFtPct - teamInternPct}%` }} />}
+                          {returningMembers.length > 0 && <div className="h-full bg-[#7C3AED] transition-all" style={{ width: `${teamReturningPct}%` }} />}
+                          {otherMembers.length > 0 && <div className="h-full bg-[var(--border-light)] transition-all" style={{ width: `${100 - teamFtPct - teamInternPct - teamReturningPct}%` }} />}
                         </div>
                         <div className="mt-1 flex gap-3 text-[8px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
                           <span>FT {ftMembers.length} ({teamFtPct}%)</span>
                           {internMembers.length > 0 && <span>Intern {internMembers.length} ({teamInternPct}%)</span>}
+                          {returningMembers.length > 0 && <span className="text-[#6D28D9]">Returning {returningMembers.length} ({teamReturningPct}%)</span>}
                           {otherMembers.length > 0 && <span>Other {otherMembers.length}</span>}
                         </div>
                       </div>
@@ -408,6 +425,25 @@ export default function HeadcountPlannerPage() {
                               <span className="ml-auto shrink-0 bg-[#EAEAEA] px-1.5 py-0.5 text-[8px] font-black uppercase text-[#81858C]">Intern</span>
                             </div>
                           ))}
+                        </div>
+                      </>
+                    )}
+                    {/* Returning (active interns with a live return offer) */}
+                    {returningMembers.length > 0 && (
+                      <>
+                        <div className="mb-1 text-[8px] font-black uppercase tracking-[0.2em] text-[#6D28D9]">Returning ({returningMembers.length})</div>
+                        <div className="grid gap-1 mb-3">
+                          {returningMembers.map((m) => {
+                            const cnv = returningById.get(m.id);
+                            return (
+                              <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
+                                <span className="font-black text-[#5B21B6] min-w-0 truncate">{m.name}</span>
+                                <span className="text-[#7C3AED] truncate">{m.role || '\u2014'}</span>
+                                {cnv?.returnOfferType && <span className="shrink-0 text-[8px] font-black uppercase text-[#7C3AED]">{cnv.returnOfferType === 'FULL_TIME' ? '→ FT' : '→ Intern'}</span>}
+                                <span className="ml-auto shrink-0 bg-[#7C3AED]/10 px-1.5 py-0.5 text-[8px] font-black uppercase text-[#5B21B6]">Returning</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </>
                     )}
