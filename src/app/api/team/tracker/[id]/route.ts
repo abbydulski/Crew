@@ -16,7 +16,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, email, startDate, role, team, officeLocation, manager, employmentType, plannedConversionDate, endDate, endReason } = body as {
+    const { name, email, startDate, role, team, officeLocation, manager, employmentType, plannedConversionDate, endDate, endReason, returnOfferStatus, returnOfferType, returnStartDate } = body as {
       name?: string | null;
       email?: string;
       startDate?: string | null;
@@ -28,6 +28,9 @@ export async function PATCH(
       plannedConversionDate?: string | null;
       endDate?: string | null;
       endReason?: string | null;
+      returnOfferStatus?: string | null;
+      returnOfferType?: string | null;
+      returnStartDate?: string | null;
     };
 
     const data: Record<string, unknown> = {};
@@ -48,6 +51,24 @@ export async function PATCH(
     if (plannedConversionDate !== undefined) data.plannedConversionDate = plannedConversionDate ? new Date(plannedConversionDate) : null;
     if (endDate !== undefined)        data.endDate        = endDate ? new Date(endDate) : null;
     if (endReason !== undefined)      data.endReason      = endReason || null;
+    if (returnOfferStatus !== undefined) {
+      const s = (returnOfferStatus || 'NONE').toUpperCase();
+      const allowed = ['NONE', 'GIVEN', 'ACCEPTED', 'DECLINED'];
+      if (!allowed.includes(s)) return NextResponse.json({ success: false, error: 'Invalid return offer status' }, { status: 400 });
+      data.returnOfferStatus = s;
+      // Clear type/date when there is no live offer
+      if (s === 'NONE' || s === 'DECLINED') { data.returnOfferType = null; data.returnStartDate = null; }
+    }
+    if (returnOfferType !== undefined) {
+      if (!returnOfferType) data.returnOfferType = null;
+      else {
+        const t = returnOfferType.toUpperCase();
+        const allowed = ['FULL_TIME', 'INTERNSHIP'];
+        if (!allowed.includes(t)) return NextResponse.json({ success: false, error: 'Invalid return offer type' }, { status: 400 });
+        data.returnOfferType = t;
+      }
+    }
+    if (returnStartDate !== undefined) data.returnStartDate = returnStartDate ? new Date(returnStartDate) : null;
 
     try {
       const updated = await prisma.appUser.update({ where: { id }, data });

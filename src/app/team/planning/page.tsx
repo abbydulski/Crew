@@ -3,20 +3,24 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageLoading from '@/components/PageLoading';
-import { PROBATION_REVIEW_DAYS } from '@/lib/constants';
+import { PROBATION_REVIEW_DAYS, RETURN_OFFER_STATUS_OPTIONS, RETURN_OFFER_TYPE_OPTIONS } from '@/lib/constants';
+import type { ReturnOfferStatus, ReturnOfferType } from '@/lib/constants';
 
 /* ── Types ── */
-interface TeamMember { id: string; name: string; role: string | null; employmentType: string | null; incoming?: boolean }
-interface TeamRow { team: string; filled: number; open: number; incoming: number; projected: number; openTitles: string[]; members: TeamMember[] }
-interface Intern { id: string; name: string; team: string; startDate: string | null; daysSinceStart: number | null; plannedConversionDate: string | null }
+interface TeamMember { id: string; name: string; role: string | null; employmentType: string | null; incoming?: boolean; conversion?: boolean }
+interface TeamRow { team: string; filled: number; open: number; incoming: number; incomingConversions: number; projected: number; openTitles: string[]; members: TeamMember[] }
+interface Intern { id: string; name: string; team: string; startDate: string | null; daysSinceStart: number | null; plannedConversionDate: string | null; returnOfferStatus: ReturnOfferStatus | null; returnOfferType: ReturnOfferType | null; returnStartDate: string | null }
 interface IncomingHire { id: string; name: string; team: string; role: string | null; employmentType: string | null; startDate: string | null }
-interface Totals { filled: number; open: number; incoming: number; projected: number; ftCount: number; internCount: number; otherCount: number }
+interface IncomingConversion { id: string; name: string; team: string; role: string | null; returnOfferStatus: ReturnOfferStatus | null; returnOfferType: ReturnOfferType | null; returnStartDate: string | null; currentlyActive: boolean }
+interface Totals { filled: number; open: number; incoming: number; incomingConversions: number; projected: number; ftCount: number; internCount: number; otherCount: number; conversionFt: number; conversionIntern: number }
 
 export default function HeadcountPlannerPage() {
   const [rows, setRows] = useState<TeamRow[]>([]);
-  const [totals, setTotals] = useState<Totals>({ filled: 0, open: 0, incoming: 0, projected: 0, ftCount: 0, internCount: 0, otherCount: 0 });
+  const [totals, setTotals] = useState<Totals>({ filled: 0, open: 0, incoming: 0, incomingConversions: 0, projected: 0, ftCount: 0, internCount: 0, otherCount: 0, conversionFt: 0, conversionIntern: 0 });
   const [interns, setInterns] = useState<Intern[]>([]);
   const [incomingHires, setIncomingHires] = useState<IncomingHire[]>([]);
+  const [incomingConversions, setIncomingConversions] = useState<IncomingConversion[]>([]);
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [now] = useState(() => Date.now());
@@ -36,6 +40,7 @@ export default function HeadcountPlannerPage() {
         setTotals(data.data.totals);
         setInterns(data.data.interns || []);
         setIncomingHires(data.data.incoming || []);
+        setIncomingConversions(data.data.incomingConversions || []);
       } else setError(data.error || 'Failed to load');
     } catch { setError('Failed to load'); }
   }, []);
@@ -46,9 +51,29 @@ export default function HeadcountPlannerPage() {
     setConvertIds((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   };
 
-  // Scenario-adjusted counts
+  // Persist a return-offer change for an intern, then reload projections.
+  const patchReturnOffer = useCallback(async (id: string, fields: { returnOfferStatus?: string; returnOfferType?: string | null; returnStartDate?: string | null }) => {
+    setSavingId(id); setError('');
+    try {
+      const res = await fetch(`/api/team/tracker/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields) });
+      const data = await res.json();
+      if (data.success) await load();
+      else setError(data.error || 'Failed to save return offer');
+    } catch { setError('Failed to save return offer'); }
+    finally { setSavingId(null); }
+  }, [load]);
+
+  // Active interns with a Full-Time return offer (Given/Accepted) convert automatically.
+  const autoFtIds = useMemo(() =>
+    new Set(interns.filter((i) => i.returnOfferType === 'FULL_TIME' && (i.returnOfferStatus === 'GIVEN' || i.returnOfferStatus === 'ACCEPTED')).map((i) => i.id)),
+  [interns]);
+  const isConverting = useCallback((id: string) => convertIds.has(id) || autoFtIds.has(id), [convertIds, autoFtIds]);
+  const convertingCount = useMemo(() => new Set([...convertIds, ...autoFtIds]).size, [convertIds, autoFtIds]);
+
+  // Scenario-adjusted counts. Active FT conversions shift Intern→FT within current headcount;
+  // alumni/returning conversions are future bodies counted only in projected, not the current mix.
   const scenario = useMemo(() => {
-    const converting = convertIds.size;
+    const converting = convertingCount;
     return {
       filled: totals.filled,
       ft: totals.ftCount + converting,
@@ -56,10 +81,11 @@ export default function HeadcountPlannerPage() {
       other: totals.otherCount,
       open: totals.open,
       incoming: totals.incoming,
+      incomingConversions: totals.incomingConversions,
       projected: totals.projected,
       converting,
     };
-  }, [totals, convertIds.size]);
+  }, [totals, convertingCount]);
 
   if (isLoading) return <PageLoading />;
 
@@ -82,14 +108,15 @@ export default function HeadcountPlannerPage() {
       </div>
 
       {/* Summary tiles */}
-      <div className="mb-6 grid grid-cols-3 gap-3 sm:grid-cols-6">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         {[
           { label: 'Headcount', value: scenario.filled, sub: 'active' },
           { label: 'Full-Time', value: scenario.ft, sub: `${ftPct}%` },
           { label: 'Interns', value: scenario.intern, sub: `${internPct}%` },
           { label: 'Incoming', value: scenario.incoming, sub: 'hired / onboarding' },
+          { label: 'Returning', value: incomingConversions.length, sub: 'return offers' },
           { label: 'Open Roles', value: scenario.open, sub: 'to hire' },
-          { label: 'Projected', value: scenario.filled + scenario.incoming + scenario.open, sub: 'all filled + incoming' },
+          { label: 'Projected', value: scenario.projected, sub: 'filled + incoming + open' },
         ].map((f) => (
           <div key={f.label} className="border border-[var(--border)] bg-[var(--card-background)] px-4 py-3">
             <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">{f.label}</div>
@@ -149,6 +176,37 @@ export default function HeadcountPlannerPage() {
         </div>
       )}
 
+      {/* Incoming conversions banner — interns returning via a return offer */}
+      {incomingConversions.length > 0 && (
+        <div className="mb-6 border border-[#7C3AED]/30 bg-[#7C3AED]/5 p-4">
+          <h3 className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6D28D9]">
+            Incoming Conversions ({incomingConversions.length})
+          </h3>
+          <div className="grid gap-1">
+            {incomingConversions.map((cnv) => {
+              const startDate = cnv.returnStartDate ? new Date(cnv.returnStartDate) : null;
+              const daysUntil = startDate ? Math.ceil((startDate.getTime() - now) / (1000 * 60 * 60 * 24)) : null;
+              return (
+                <div key={cnv.id} className="flex items-center gap-3 text-[11px] font-mono">
+                  <span className="font-black text-[#5B21B6]">{cnv.name}</span>
+                  <span className="text-[#6D28D9]">{cnv.team}</span>
+                  <span className="text-[#7C3AED]">{cnv.role || '—'}</span>
+                  <span className="text-[8px] font-black uppercase text-[#7C3AED]">{cnv.returnOfferType === 'FULL_TIME' ? '→ FT' : '→ Intern'}</span>
+                  <span className={`px-1.5 py-0.5 text-[8px] font-black uppercase ${cnv.returnOfferStatus === 'ACCEPTED' ? 'bg-[#7C3AED]/15 text-[#5B21B6]' : 'bg-[#7C3AED]/5 text-[#7C3AED]'}`}>{cnv.returnOfferStatus}</span>
+                  {!cnv.currentlyActive && <span className="bg-[#EAEAEA] px-1.5 py-0.5 text-[8px] font-black uppercase text-[#81858C]">Alumni</span>}
+                  {startDate && (
+                    <span className="ml-auto text-[#6D28D9] font-black">
+                      {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
+                      {daysUntil !== null && <span className="ml-1 font-normal text-[#7C3AED]">({daysUntil > 0 ? `in ${daysUntil}d` : daysUntil === 0 ? 'today' : `${Math.abs(daysUntil)}d ago`})</span>}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Collapsible intern conversion panel */}
       {interns.length > 0 && (
         <div className="mb-6 border border-[var(--border)]">
@@ -158,9 +216,9 @@ export default function HeadcountPlannerPage() {
               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">
                 Scenario: Convert Interns → FT
               </span>
-              {convertIds.size > 0 && (
+              {convertingCount > 0 && (
                 <span className="bg-[var(--foreground)] px-2 py-0.5 text-[9px] font-black text-[var(--background)]">
-                  {convertIds.size} selected
+                  {convertingCount} converting
                 </span>
               )}
             </div>
@@ -186,20 +244,26 @@ export default function HeadcountPlannerPage() {
                   const ob = db > PROBATION_REVIEW_DAYS.end ? 0 : db >= PROBATION_REVIEW_DAYS.start ? 1 : 2;
                   return oa !== ob ? oa - ob : db - da;
                 }).map((intern) => {
-                  const checked = convertIds.has(intern.id);
+                  const autoFt = autoFtIds.has(intern.id);
+                  const checked = isConverting(intern.id);
                   const days = intern.daysSinceStart;
                   const overdue = days !== null && days > PROBATION_REVIEW_DAYS.end;
                   const reviewDue = days !== null && days >= PROBATION_REVIEW_DAYS.start && days <= PROBATION_REVIEW_DAYS.end;
                   const pct = days !== null ? Math.min(100, Math.round((days / PROBATION_REVIEW_DAYS.end) * 100)) : 0;
+                  const status = intern.returnOfferStatus || 'NONE';
+                  const hasOffer = status === 'GIVEN' || status === 'ACCEPTED';
+                  const saving = savingId === intern.id;
                   return (
-                    <label key={intern.id}
-                      className={`block cursor-pointer px-4 py-2.5 transition-colors hover:bg-[var(--background)] ${checked ? 'bg-[var(--background)]' : ''}`}>
+                    <div key={intern.id}
+                      className={`px-4 py-2.5 transition-colors ${checked ? 'bg-[var(--background)]' : ''}`}>
                       <div className="flex items-center gap-3">
-                        <input type="checkbox" checked={checked} onChange={() => toggleConvert(intern.id)}
-                          className="h-3.5 w-3.5 accent-[var(--foreground)] shrink-0" />
+                        <input type="checkbox" checked={checked} disabled={autoFt} onChange={() => toggleConvert(intern.id)}
+                          className="h-3.5 w-3.5 accent-[var(--foreground)] shrink-0 disabled:opacity-40" title={autoFt ? 'Converting via accepted/given FT return offer' : undefined} />
                         <span className="text-[11px] font-black text-[var(--foreground)] min-w-0 truncate">{intern.name}</span>
                         <span className="text-[10px] text-[var(--text-secondary)] shrink-0">{intern.team}</span>
                         <div className="ml-auto flex items-center gap-2 shrink-0">
+                          {hasOffer && <span className={`px-1.5 py-0.5 text-[8px] font-black uppercase ${status === 'ACCEPTED' ? 'bg-[#7C3AED]/15 text-[#5B21B6]' : 'bg-[#7C3AED]/5 text-[#7C3AED]'}`}>{status} · {intern.returnOfferType === 'FULL_TIME' ? 'FT' : intern.returnOfferType === 'INTERNSHIP' ? 'Intern' : '—'}</span>}
+                          {status === 'DECLINED' && <span className="bg-[#EAEAEA] px-1.5 py-0.5 text-[8px] font-black uppercase text-[#81858C]">Declined</span>}
                           {overdue && <span className="bg-red-100 px-1.5 py-0.5 text-[8px] font-black uppercase text-red-700">Overdue</span>}
                           {reviewDue && <span className="bg-[#EAEAEA] px-1.5 py-0.5 text-[8px] font-black uppercase text-[#81858C]">Review</span>}
                         </div>
@@ -212,7 +276,26 @@ export default function HeadcountPlannerPage() {
                         <span className="text-[9px] font-mono text-[var(--text-secondary)] shrink-0">{days ?? 0}/{PROBATION_REVIEW_DAYS.end}d</span>
                         {intern.plannedConversionDate && <span className="text-[10px] font-black text-[var(--foreground)] shrink-0">{new Date(intern.plannedConversionDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}</span>}
                       </div>
-                    </label>
+                      {/* Return-offer quick set */}
+                      <div className="mt-1.5 ml-[26px] flex flex-wrap items-center gap-2">
+                        <span className="text-[8px] font-black uppercase tracking-wider text-[var(--text-secondary)]">Return offer</span>
+                        <select value={status} disabled={saving} onChange={(e) => patchReturnOffer(intern.id, { returnOfferStatus: e.target.value })}
+                          className="border border-[var(--border)] bg-[var(--background)] px-1.5 py-0.5 text-[9px] font-mono disabled:opacity-40">
+                          {RETURN_OFFER_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                        {hasOffer && (
+                          <>
+                            <select value={intern.returnOfferType || ''} disabled={saving} onChange={(e) => patchReturnOffer(intern.id, { returnOfferType: e.target.value || null })}
+                              className="border border-[var(--border)] bg-[var(--background)] px-1.5 py-0.5 text-[9px] font-mono disabled:opacity-40">
+                              <option value="">type…</option>
+                              {RETURN_OFFER_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                            <input type="date" value={intern.returnStartDate ? intern.returnStartDate.slice(0, 10) : ''} disabled={saving} onChange={(e) => patchReturnOffer(intern.id, { returnStartDate: e.target.value || null })}
+                              className="border border-[var(--border)] bg-[var(--background)] px-1.5 py-0.5 text-[9px] font-mono disabled:opacity-40" />
+                          </>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -235,12 +318,13 @@ export default function HeadcountPlannerPage() {
           </div>
           {rows.map((r) => {
             const active = r.members.filter((m) => !m.incoming);
-            const teamFt = active.filter((m) => (m.employmentType === 'Full-Time' || !m.employmentType) || (m.employmentType === 'Intern' && convertIds.has(m.id))).length;
-            const teamIntern = active.filter((m) => m.employmentType === 'Intern' && !convertIds.has(m.id)).length;
+            const teamFt = active.filter((m) => (m.employmentType === 'Full-Time' || !m.employmentType) || (m.employmentType === 'Intern' && isConverting(m.id))).length;
+            const teamIntern = active.filter((m) => m.employmentType === 'Intern' && !isConverting(m.id)).length;
             const ftPctBar = (teamFt / maxProjected) * 100;
             const internPctBar = (teamIntern / maxProjected) * 100;
             const openPct = (r.open / maxProjected) * 100;
             const incomingPct = (r.incoming / maxProjected) * 100;
+            const conversionPct = (r.incomingConversions / maxProjected) * 100;
             const isExpanded = expandedTeam === r.team;
             return (
               <div key={r.team}>
@@ -255,6 +339,7 @@ export default function HeadcountPlannerPage() {
                       <div className="h-full bg-[var(--foreground)]" style={{ width: `${ftPctBar}%` }} title={`FT: ${teamFt}`} />
                       {internPctBar > 0 && <div className="h-full bg-[#81858C]" style={{ width: `${internPctBar}%` }} title={`Intern: ${teamIntern}`} />}
                       {incomingPct > 0 && <div className="h-full bg-[#00B0FF]" style={{ width: `${incomingPct}%` }} title={`Incoming: ${r.incoming}`} />}
+                      {conversionPct > 0 && <div className="h-full bg-[#7C3AED]" style={{ width: `${conversionPct}%` }} title={`Returning: ${r.incomingConversions}`} />}
                       <div className="h-full border-l border-[var(--background)] bg-[var(--foreground)] opacity-30" style={{ width: `${openPct}%` }} />
                     </div>
                   </div>
@@ -263,14 +348,15 @@ export default function HeadcountPlannerPage() {
                       <span className="font-black text-[var(--foreground)]">{teamFt} FT</span>
                       {teamIntern > 0 && <span className="text-[#81858C]"> · {teamIntern} Intern</span>}
                       {r.incoming > 0 && <span className="text-[#00B0FF]"> +{r.incoming} incoming</span>}
+                      {r.incomingConversions > 0 && <span className="text-[#7C3AED]"> +{r.incomingConversions} returning</span>}
                       <span className="text-[var(--text-secondary)]"> +{r.open} open</span>
                     </div>
                   </div>
                 </button>
                 {isExpanded && (() => {
                   const active = r.members.filter((m) => !m.incoming);
-                  const ftMembers = active.filter((m) => (m.employmentType === 'Full-Time' || !m.employmentType) || (m.employmentType === 'Intern' && convertIds.has(m.id)));
-                  const internMembers = active.filter((m) => m.employmentType === 'Intern' && !convertIds.has(m.id));
+                  const ftMembers = active.filter((m) => (m.employmentType === 'Full-Time' || !m.employmentType) || (m.employmentType === 'Intern' && isConverting(m.id)));
+                  const internMembers = active.filter((m) => m.employmentType === 'Intern' && !isConverting(m.id));
                   const otherMembers = active.filter((m) => m.employmentType && m.employmentType !== 'Full-Time' && m.employmentType !== 'Intern');
                   const incomingMembers = r.members.filter((m) => m.incoming);
                   const teamTotal = active.length;
@@ -302,7 +388,7 @@ export default function HeadcountPlannerPage() {
                             <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
                               <span className="font-black text-[var(--foreground)] min-w-0 truncate">{m.name}</span>
                               <span className="text-[var(--text-secondary)] truncate">{m.role || '\u2014'}</span>
-                              {m.employmentType === 'Intern' && convertIds.has(m.id) && (
+                              {m.employmentType === 'Intern' && isConverting(m.id) && (
                                 <span className="ml-auto shrink-0 bg-[#FF6621]/10 px-1.5 py-0.5 text-[8px] font-black uppercase text-[#FF6621]">Converting</span>
                               )}
                             </div>
@@ -347,10 +433,11 @@ export default function HeadcountPlannerPage() {
                         <div className="grid gap-1 mb-3">
                           {incomingMembers.map((m) => (
                             <div key={m.id} className="flex items-center gap-3 text-[11px] font-mono">
-                              <span className="font-black text-[#0090D0] min-w-0 truncate">{m.name}</span>
-                              <span className="text-[#00B0FF] truncate">{m.role || '\u2014'}</span>
+                              <span className={`font-black min-w-0 truncate ${m.conversion ? 'text-[#5B21B6]' : 'text-[#0090D0]'}`}>{m.name}</span>
+                              <span className={`truncate ${m.conversion ? 'text-[#7C3AED]' : 'text-[#00B0FF]'}`}>{m.role || '\u2014'}</span>
+                              {m.conversion && <span className="shrink-0 bg-[#7C3AED]/10 px-1.5 py-0.5 text-[8px] font-black uppercase text-[#5B21B6]">Returning</span>}
                               {m.employmentType && (
-                                <span className="ml-auto shrink-0 bg-[#00B0FF]/10 px-1.5 py-0.5 text-[8px] font-black uppercase text-[#0090D0]">{m.employmentType}</span>
+                                <span className={`ml-auto shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase ${m.conversion ? 'bg-[#7C3AED]/10 text-[#5B21B6]' : 'bg-[#00B0FF]/10 text-[#0090D0]'}`}>{m.employmentType}</span>
                               )}
                             </div>
                           ))}

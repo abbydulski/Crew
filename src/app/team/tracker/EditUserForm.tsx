@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { EMPLOYMENT_TYPE_OPTIONS, OFFICE_OPTIONS, TEAM_OPTIONS } from '@/lib/constants';
+import { EMPLOYMENT_TYPE_OPTIONS, OFFICE_OPTIONS, RETURN_OFFER_STATUS_OPTIONS, RETURN_OFFER_TYPE_OPTIONS, TEAM_OPTIONS } from '@/lib/constants';
 import type { TrackerUser } from './types';
 
 interface Props {
@@ -25,6 +25,9 @@ export default function EditUserForm({ user, onSaved, managerOptions }: Props) {
   const [manager, setManager] = useState(user.manager || '');
   const [employmentType, setEmploymentType] = useState(user.employmentType || '');
   const [plannedConversionDate, setPlannedConversionDate] = useState(user.plannedConversionDate ? user.plannedConversionDate.slice(0, 10) : '');
+  const [returnOfferStatus, setReturnOfferStatus] = useState<string>(user.returnOfferStatus || 'NONE');
+  const [returnOfferType, setReturnOfferType] = useState<string>(user.returnOfferType || '');
+  const [returnStartDate, setReturnStartDate] = useState(user.returnStartDate ? user.returnStartDate.slice(0, 10) : '');
   const [endDate, setEndDate] = useState(user.endDate ? user.endDate.slice(0, 10) : '');
   const [endReason, setEndReason] = useState(user.endReason || '');
   const [saving, setSaving] = useState(false);
@@ -45,6 +48,9 @@ export default function EditUserForm({ user, onSaved, managerOptions }: Props) {
           role, team, officeLocation, manager,
           employmentType: employmentType || null,
           plannedConversionDate: plannedConversionDate || null,
+          returnOfferStatus: returnOfferStatus || 'NONE',
+          returnOfferType: returnOfferType || null,
+          returnStartDate: returnStartDate || null,
           endDate: endDate || null,
           endReason: endReason || null,
         }),
@@ -156,6 +162,36 @@ export default function EditUserForm({ user, onSaved, managerOptions }: Props) {
             <input type="date" value={plannedConversionDate} onChange={(e) => setPlannedConversionDate(e.target.value)} className={inputClass} />
           </div>
           <p className="mt-1 text-[9px] text-amber-700">Set the date this intern should convert to FT. Shows in the Upcoming Conversions panel and on the planner.</p>
+        </div>
+      )}
+
+      {employmentType === 'Intern' && (
+        <div className="border border-[#7C3AED]/30 bg-[#7C3AED]/5 p-3">
+          <p className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6D28D9]">Return Offer</p>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className={labelClass}>Status</label>
+              <select value={returnOfferStatus} onChange={(e) => setReturnOfferStatus(e.target.value)} className={inputClass}>
+                {RETURN_OFFER_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            {(returnOfferStatus === 'GIVEN' || returnOfferStatus === 'ACCEPTED') && (
+              <>
+                <div>
+                  <label className={labelClass}>Type</label>
+                  <select value={returnOfferType} onChange={(e) => setReturnOfferType(e.target.value)} className={inputClass}>
+                    <option value="">—</option>
+                    {RETURN_OFFER_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Return date</label>
+                  <input type="date" value={returnStartDate} onChange={(e) => setReturnStartDate(e.target.value)} className={inputClass} />
+                </div>
+              </>
+            )}
+          </div>
+          <p className="mt-1 text-[9px] text-[#7C3AED]">Given/Accepted offers show under Incoming Conversions on the planner; FT offers fold into projected full-time.</p>
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import type { CheckinType } from '@/lib/constants';
+import type { CheckinType, ReturnOfferStatus, ReturnOfferType } from '@/lib/constants';
 import { PROBATION_REVIEW_DAYS } from '@/lib/constants';
 
 export interface TrackerCheckin {
@@ -25,6 +25,9 @@ export interface TrackerUser {
   plannedConversionDate: string | null;
   endDate: string | null;
   endReason: string | null;
+  returnOfferStatus: ReturnOfferStatus | null;
+  returnOfferType: ReturnOfferType | null;
+  returnStartDate: string | null;
   lastCheckin: { id: string; type: CheckinType; loggedAt: string } | null;
   checkinCount: number;
   createdAt: string;

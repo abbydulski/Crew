@@ -56,6 +56,18 @@ enum CheckinType {
   NOTE
 }
 
+enum ReturnOfferStatus {
+  NONE
+  GIVEN
+  ACCEPTED
+  DECLINED
+}
+
+enum ReturnOfferType {
+  FULL_TIME
+  INTERNSHIP
+}
+
 // Models
 
 model AppUser {
@@ -82,6 +94,11 @@ model AppUser {
   plannedConversionDate DateTime?
   endDate            DateTime?
   endReason          String?
+
+  // Intern return-offer tracking — drives "incoming conversions" in planning
+  returnOfferStatus  ReturnOfferStatus @default(NONE)
+  returnOfferType    ReturnOfferType?
+  returnStartDate    DateTime?
 
   candidate Candidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
   checkins  Checkin[]

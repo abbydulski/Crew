@@ -29,6 +29,9 @@ export async function GET() {
     employmentType: u.employmentType,
     endDate: u.endDate,
     endReason: u.endReason,
+    returnOfferStatus: u.returnOfferStatus,
+    returnOfferType: u.returnOfferType,
+    returnStartDate: u.returnStartDate,
     createdAt: u.createdAt,
     lastLogin: u.lastLogin,
   }));

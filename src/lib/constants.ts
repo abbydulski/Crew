@@ -49,6 +49,23 @@ export const EMPLOYMENT_TYPE_OPTIONS = [
   { value: 'Intern', label: 'Intern' },
 ] as const;
 
+// ── Intern return offers ────────────────────────────────────────────────────
+
+export const RETURN_OFFER_STATUS_OPTIONS = [
+  { value: 'NONE', label: 'None' },
+  { value: 'GIVEN', label: 'Given' },
+  { value: 'ACCEPTED', label: 'Accepted' },
+  { value: 'DECLINED', label: 'Declined' },
+] as const;
+
+export const RETURN_OFFER_TYPE_OPTIONS = [
+  { value: 'FULL_TIME', label: 'Full-Time' },
+  { value: 'INTERNSHIP', label: 'Internship' },
+] as const;
+
+export type ReturnOfferStatus = 'NONE' | 'GIVEN' | 'ACCEPTED' | 'DECLINED';
+export type ReturnOfferType = 'FULL_TIME' | 'INTERNSHIP';
+
 // ── Intern probation ────────────────────────────────────────────────────────
 
 /** Hourly probation review window: 3 weeks before the 3-month mark. */
