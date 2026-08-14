@@ -41,6 +41,22 @@ export const TEAM_ALIASES: Record<string, string> = {
   'biz ops': 'BizOps',
 };
 
+// ── Interview question bank ─────────────────────────────────────────────────
+
+/** Teams that have a question bank (mirrors TEAM_OPTIONS values). */
+export const QUESTION_BANK_TEAMS = ['Hardware', 'Software', 'Field', 'BizOps'] as const;
+
+/**
+ * Allowed discipline tags per team. Teams absent from this map support no tags.
+ * Hardware splits into Mechanical / Electrical / Embedded.
+ */
+export const TEAM_QUESTION_TAGS: Record<string, string[]> = {
+  Hardware: ['Mechanical', 'Electrical', 'Embedded'],
+};
+
+export const QUESTION_DIFFICULTY_OPTIONS = ['Easy', 'Medium', 'Hard'] as const;
+export type QuestionDifficulty = (typeof QUESTION_DIFFICULTY_OPTIONS)[number];
+
 // ── Employment types ────────────────────────────────────────────────────────
 
 export const EMPLOYMENT_TYPE_OPTIONS = [

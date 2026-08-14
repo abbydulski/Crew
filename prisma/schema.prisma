@@ -301,6 +301,24 @@ model Checkin {
   @@index([loggedAt])
 }
 
+// Interview Question Bank — technical interview questions organized by team.
+// Recruiting-only. Hardware questions can be tagged Mechanical/Electrical/Embedded
+// (allowed tags per team live in src/lib/constants.ts).
+model InterviewQuestion {
+  id            String   @id @default(cuid())
+  team          String                     // Hardware | Software | Field | BizOps
+  tags          String[] @default([])      // discipline tags (e.g. Hardware → Mechanical/Electrical/Embedded)
+  question      String
+  answer        String?                    // model answer / rubric (optional)
+  difficulty    String?                    // Easy | Medium | Hard (optional)
+  createdBy     String?                    // author email
+  createdByName String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([team])
+}
+
 // Comp Predictor — market benchmark data points entered by admins. Each row is
 // one company's salary for a role at a given years-of-experience. The predictor
 // aggregates points per role to place a proposed salary against the market.

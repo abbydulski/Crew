@@ -30,6 +30,7 @@ const SECTIONS: Section[] = [
     adminOnly: true,
     items: [
       { href: '/recruiting', label: 'Recruiting Pipeline' },
+      { href: '/recruiting/question-bank', label: 'Question Bank' },
       { href: '/onboarding', label: 'Onboarding' },
       { href: '/onboarding/tickets', label: 'Onboarding Tickets' },
       { href: '/team/tracker', label: 'Team Tracker' },
